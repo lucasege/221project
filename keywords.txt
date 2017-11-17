@@ -1,0 +1,7 @@
+reinforcment learning
+bs
+cheat
+Markov Decision process
+state-based game
+game playing
+adversarial game
