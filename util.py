@@ -52,6 +52,10 @@ class ValueIteration(MDPAlgorithm):
         print "ValueIteration: %d iterations" % numIters
         self.pi = pi
         self.V = V
+<<<<<<< HEAD
+=======
+        #print self.V
+>>>>>>> dcf4abdd7ae719e813a6a3723531fa07aa46028d
 
 # An abstract class representing a Markov Decision Process (MDP).
 class MDP:

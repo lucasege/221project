@@ -14,10 +14,3 @@ class Card:
 
     def __str__(self):
         return str(self.suit) + ", " + str(self.value)
-    
-    # def getValue(self):
-    #     # if self.value == "A": ??
-    #     #     return 
-    #     if self.value in ["A", "J", "Q", "K"]:
-    #         return 10
-    #     return int(self.value)
