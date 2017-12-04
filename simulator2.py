@@ -3,6 +3,7 @@ from player import Player
 import random, collections, math, itertools
 from collections import Counter
 import parallel_holdem_calc
+import holdem_calc
 
 FLOP = 3
 TURN = 1
@@ -48,8 +49,8 @@ class HoldemSimulator:
             current = start[1]
             for i in range(5):
                 current +=1
-                if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
-                if i == 4 and current > best: best = current
+                # if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
+                # if i == 4 and current > best: best = current
         if best > 0: return best
         return None
 
@@ -136,11 +137,15 @@ def main():
     #numPlayers = input("Number of players: ")
     #startAmount = input("Start Amount: ")
     #numComputer = input("How many of players will be computers? : ")
-    game = HoldemSimulator(2, 1000, 1)
-    for i in range(5):
-        game.newDeal()
-        game.deck = Deck() # Reshuffle Deck
-main()
+    print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    # game = HoldemSimulator(2, 1000, 1)
+    # for i in range(5):
+    #     game.newDeal()
+    #     game.deck = Deck() # Reshuffle Deck
+    
+if __name__ == "__main__":
+    main()
 
 CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
 CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
