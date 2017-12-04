@@ -2,6 +2,7 @@ from deck import Deck
 from player import Player
 import random, collections, math, itertools
 from collections import Counter
+import parallel_holdem_calc
 
 FLOP = 3
 TURN = 1
@@ -174,3 +175,9 @@ def main():
         game.newDeal()
         game.deck = Deck() # Reshuffle Deck
 main()
+
+## Use github prob like this:
+# parallel_holdem_calc.calculate(None, True, 1, None, ["8s", "7s", "Ad", "Ac"], False)
+# where params are (Board state, "Exact param" should be false, num iters of Monte Carlo sim, Filename - should be false, 
+#   Hole cards (2 for each player), verbose - should be false)
+# return is array of [ (prob of tie), (prob of player 1 winning), (prob of player 2 winning), ... etc]
