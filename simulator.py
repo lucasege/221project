@@ -1,12 +1,33 @@
 from deck import Deck
 from player import Player
-import util, random, collections, math
+import random, collections, math
 
 class HoldemSimulator:
-    def __init__(self, numPlayers):
-        self.numPlayers = numPlayers
-        self.deck = Deck()
+	def __init__(self, numPlayers, startAmount):
+		self.startAmount = startAmount
+		self.numPlayers = numPlayers
+		self.deck = Deck()
+		self.players = []
+		self.river = []
+		for i in range(self.numPlayers): self.players.append(Player(i,startAmount))
 
+    # If any input from any player is Quit: return 1
+	#def newRound(self):
+		#for player in self.players:
+		#	player.takeCards()
+		#	if player.getChipCount > 0:
+		#		player.dealCard(self.deck.getRandomCard())
+		#		player.dealCard(self.deck.getRandomCard())
+
+	# def getWinningHand(self, hands):
+
+def main():
+	game = HoldemSimulator(4, 1000)
+	game.nothing()
+
+main()
+
+#if __name__ == "__main__":
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
 # actions: a function that takes a state and returns a list of actions.
 # discount: a number between 0 and 1, which determines the discount factor
@@ -85,36 +106,3 @@ class HoldemSimulator:
 #             returnList.append(((action, counts[i], i), 1))
 #     return returnList
 #     # END_YOUR_CODE
-
-class HoldemSimulator:
-	def __init__(self, numPlayers, startAmount):
-		self.startAmount = startAmount
-		self.numPlayers = numPlayers
-		self.deck = Deck()
-		self.players = []
-		self.river = []
-		for i in range(self.numPlayers): self.players.append(Player(i,startAmount))
-
-	def newRound(self):
-		self.deck = Deck()
-		for player in self.players:
-			player.takeCards()
-			if player.getChipCount > 0:
-				player.dealCard(self.deck.getRandomCard())
-				player.dealCard(self.deck.getRandomCard())
-
-	# def getWinningHand(self, hands):
-		
-
-def main():
-	game = HoldemSimulator(4, 1000)
-	maxIterations = 1000
-	for i in range(maxIterations)
-		game.newRound()
-
-	for player in game.players:
-		print player.cards
-
-
-if __name__ == "__main__":
-	main()

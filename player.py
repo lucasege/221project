@@ -1,10 +1,10 @@
-from card import Card
-
 class Player:
-	def __init__(self, startingAmount, index):
+	def __init__(self, startingAmount, index, isComputer):
 		self.chips = startingAmount
 		self.index = index
 		self.cards = []
+		self.totalBets = 0
+		self.isComputer = isComputer
 
 	def __repr__(self):
 		return str(self.index) + ", " + str(self.chips)
@@ -14,7 +14,7 @@ class Player:
 
 	def peakCards(self): return self.cards
 
-	def getChipCount(self): return self.suit
+	def getChipCount(self): return self.chips
 
 	def getindex(self): return self.index
 
@@ -22,8 +22,13 @@ class Player:
 
 	def takeCards(self): self.cards = []
 
-	def bet(self, amount): 
-		if amount <= self.chips: self.chips -= amount
+	def totalBet(self): return self.totalBets
+
+	def isComputer(self): return self.isComputer
+
+	def bet(self, amount):
+		if amount <= self.chips:
+			self.chips -= amount
+			self.totalBets += amount
 
 	def winRound(self, totalWinnings): self.chips += totalWinnings
-
