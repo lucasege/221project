@@ -41,16 +41,31 @@ class HoldemSimulator:
     def straight(self, hand):
         total = hand + self.river
         if len(total) < 5: return False
+        sTotal = [(card[1],card[0]) for card in total].sort()
         best = 0
-        for start in total:
-            current = start[1]
-            for i in range(5):
-                current +=1
-                if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
-                if i == 4 and current > best: best = current
-        if best > 0: return best
-        return None
+        bHand = []
+        flush = False
+        for i in range(len(total)-4):
+            cHand = [sTotal[i]]
+            current = sTotal[i]
+            count = 0
+            while True:# j in range(1,5):
+                count += 1
+                if sTotal[i+count][0] < current[0]+1: 
+                    continue
+                elif sTotal[i+count][0] == current[0]+1: 
+                    cHand.append(sTotal[i+count])
+                    current = sTotal[i+count]
+                else: break
+                if len(cHand) == 5: 
+                    cFlush = len(filter(lambda x: x[1] == current[1], cHand)) == 5
+                    if (flush and cFlush and current[0] > best) or (not flush and current[0] > best) or (not flush and cFlush):
+                        flush = cFlush
+                        best = current[0]
+        if best > 0: return (best, flush)
+        return (0,False)
 
+    # also finds flush
     def nKind(self, hand, N, flush):
         allCards = self.river + hand
         index = 1
@@ -58,8 +73,8 @@ class HoldemSimulator:
         values = [int(i[index]) for i in allCards]
         count = Counter(values)
         for key in count:
-            if count[key] == N: return True, key
-        return False, None
+            if count[key] == N: return (True, key)
+        return (False, None)
 
     def fullHouse(self, hand):
         allCards = self.river + hand
@@ -71,8 +86,8 @@ class HoldemSimulator:
                 triple = key
         for key in count:
             if count[key] == 2 and key != triple:
-                return True, key, triple
-        return False, None, None
+                return (True,triple)
+        return (False, None)
 
     def getHandValues(self, hand):
         hand = list(hand)
@@ -144,13 +159,63 @@ class HoldemSimulator:
             if player.cards == []: continue # Previous Fold
             self.takeAction(player)
 
+    #sf:7, 4k:6, fh:5, f:4, s:3, 3k:2, 2k:1, h:0
     def endGame(self):
         totals = []
-        for i, player in enumerate(self.players()):
-            cards = player.peakCards()
-        winner = self.players(totals.index(max(totals)))
-        winner.winRound(self.pot)
-        print "Player ", winner, " won ", self.pot
+        best = None
+        for i, player in enumerate(self.players()): 
+            hand = player.peakCards()
+            straight = None
+            val = straight(self, hand)
+            if val[0] > 0:
+                if val[1]: 
+                    totals.append((7,val[0]))
+                    continue
+                else: straight = (3,val[1])
+            val = nKind(self, hand,4,False)
+            if val[0]: 
+                totals.append((6,val[1]))
+                continue
+            val = fullHouse(self,hand)
+            if val[0]: 
+                totals.append((5,val[1]))
+                continue
+            val = nKind(self, hand, 5, True)
+            if val[0]:
+                totals.append((4,val[1]))
+                continue
+            if straight != None:
+                totals.append((3,val[0]))
+                continue
+            val = nKind(self, hand, 3, False)
+            if val[0]:
+                totals.append((2,val[1]))
+                continue
+            val = nKind(self, hand, 2, False)
+            if val[0]:
+                totals.append((1,val[1]))
+                continue
+            totals.append((0,highCard(self,hand)))
+
+        winners = None
+        bHand = None
+        for i,pHand in enumerate(totals):
+            if bHand == None:
+                winners = [self.players[i]]
+                bHand = pHand
+            elif pHand[0] > bHand[0]:
+                winners = [self.players[i]]
+                bHand = pHand
+            elif pHand[0] == bHand[0]:
+                if pHand[1] > bHand[1]: 
+                    winners = [self.players[i]]
+                    bHand = pHand
+                elif pHand[1] == bHand[1]:
+                    winners.append(self.players[i])
+
+        for player in winners:
+            player.winRound(self.pot/float(len(winners)))
+            print "Player ", player, " won ", self.pot/float(len(winners))
 
     def roundResults(self):
         if self.turn == 0:
