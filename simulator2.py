@@ -44,10 +44,11 @@ class HoldemSimulator:
     def straight(self, hand):
         total = hand + self.river
         if len(total) < 5: return False
-        sTotal = [(card[1],card[0]) for card in total].sort()
+        sTotal = [(card[1],card[0]) for card in total]
+        sTotal.sort()
         best = 0
         flush = False
-        for i in range(len(total)-4):
+        for i in range(len(sTotal)-4):
             cHand = [sTotal[i]]
             current = sTotal[i]
             count = 0
@@ -77,17 +78,24 @@ class HoldemSimulator:
             if count[key] == N: return (True, key)
         return (False, None)
 
-    def fullHouse(self, hand):
+    def fullHouse(self, hand, twoPair):
         allCards = self.river + hand
         values = [int(i[1]) for i in allCards]
         count = Counter(values)
-        triple = None
-        for key in count:
-            if count[key] == 3:
-                triple = key
-        for key in count:
-            if count[key] == 2 and key != triple:
-                return (True,triple)
+        trip = 3
+        if twoPair: trip = 2
+        best3 = 0
+        best2 = 0
+        for key3 in count:
+            if count[key3] == trip and key3 > best3:
+                best3 = key3
+                best2 = 0
+                for key2 in count:
+                    if count[key2] >= 2 and key2 != key3 and key2 > best2:
+                        best2 = key2
+        if best3 > 0 and best2 > 0:
+            if not twoPair: return (True,key3)
+            return (True,best3,best2)
         return (False, None)
 
     def highCard(self, hand):
@@ -97,9 +105,8 @@ class HoldemSimulator:
             elif card[1] > maxCard: maxCard = card[1]
         return maxCard
 
-    def computerTakeAction(self, player):
+    #def computerTakeAction(self, player):
         
-
     def takeAction(self, player):
         while True:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
@@ -125,43 +132,48 @@ class HoldemSimulator:
             if player.cards == []: continue # Previous Fold
             self.takeAction(player)
 
-    #sf:7, 4k:6, fh:5, f:4, s:3, 3k:2, 2k:1, h:0
+    #sf:8, 4k:7, fh:6, f:5, s:4, 3k:3, 22k:2, 2k:1, h:0
     def endGame(self):
         totals = []
         best = None
-        for i, player in enumerate(self.players()): 
+        for i, player in enumerate(self.players): 
             hand = player.peakCards()
-            straight = None
-            val = straight(self, hand)
+            strt = None
+            twoPair = None
+            val = self.straight(hand)
             if val[0] > 0:
                 if val[1]: 
-                    totals.append((7,val[0]))
+                    totals.append((8,val[0]))
                     continue
-                else: straight = (3,val[1])
-            val = nKind(self, hand,4,False)
+                else: strt = (4,val[1])
+            val = self.nKind(hand,4,False)
             if val[0]: 
+                totals.append((7,val[1]))
+                continue
+            val = self.fullHouse(hand, False)
+            if val[0]:  
                 totals.append((6,val[1]))
                 continue
-            val = fullHouse(self,hand)
-            if val[0]: 
+            val = self.nKind(hand, 5, True)
+            if val[0]:
                 totals.append((5,val[1]))
                 continue
-            val = nKind(self, hand, 5, True)
+            if strt != None:
+                totals.append(strt)
+                continue
+            val = self.nKind(hand, 3, False)
             if val[0]:
-                totals.append((4,val[1]))
+                totals.append((3,val[1]))
                 continue
-            if straight != None:
-                totals.append((3,val[0]))
+            val = self.fullHouse(hand, True)
+            if val[0]: 
+                totals.append((2,val[1],val[2]))
                 continue
-            val = nKind(self, hand, 3, False)
-            if val[0]:
-                totals.append((2,val[1]))
-                continue
-            val = nKind(self, hand, 2, False)
+            val = self.nKind(hand, 2, False)
             if val[0]:
                 totals.append((1,val[1]))
                 continue
-            totals.append((0,highCard(self,hand)))
+            totals.append((0,self.highCard(hand)))
 
         winners = None
         bHand = None
@@ -173,10 +185,10 @@ class HoldemSimulator:
                 winners = [self.players[i]]
                 bHand = pHand
             elif pHand[0] == bHand[0]:
-                if pHand[1] > bHand[1]: 
+                if pHand[1] > bHand[1] or (len(pHand) == 3 and pHand[2] > bHand[2]): 
                     winners = [self.players[i]]
                     bHand = pHand
-                elif pHand[1] == bHand[1]:
+                elif (pHand[1] == bHand[1] and len(pHand) ==2) or (len(pHand) == 3 and pHand[1] == bHand[1] and pHand[2] == bHand[2]):
                     winners.append(self.players[i])
 
         for player in winners:
@@ -192,16 +204,33 @@ class HoldemSimulator:
         print " "
         print "River Cards: ", self.river
 
+    # used to test simulator
+    def test(self):
+        self.players[0].dealCard((1,1))
+        self.players[0].dealCard((3,3))
+        self.players[1].dealCard((2,2))
+        self.players[1].dealCard((3,7))
+
+        self.river.append((0,3))
+        self.river.append((0,1))
+        self.river.append((1,2))
+        self.river.append((0,9))
+        self.river.append((1,9))
+
 def gameExplanation():
     print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
 def main():
+    # game = HoldemSimulator(2,1000,1)
+    # game.test()
+    # game.endGame()
+
     gameExplanation()
     #numPlayers = input("Number of players: ")
     #startAmount = input("Start Amount: ")
     #numComputer = input("How many of players will be computers? : ")
-    print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
-    print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    # print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    # print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
     # game = HoldemSimulator(2, 1000, 1)
     # for i in range(5):
     #     game.newDeal()
