@@ -21,6 +21,7 @@ class HoldemSimulator:
         self.curRaise = 0
         self.discardPile = []
         self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
+        i = 0
         for i in range((self.numPlayers - numComputers)): self.players.append(Player(startAmount, i, False))
         for j in range(numComputers): self.players.append(Player(startAmount, i+j+1, True))
 
@@ -75,50 +76,15 @@ class HoldemSimulator:
                 return True, key, triple
         return False, None, None
 
-    def getHandValues(self, hand):
-        hand = list(hand)
-        values = [card[1] for card in hand]
-        values.sort(reverse = True)
-        return values
-
     def highCard(self, hand):
-        return max(hand)
+        maxCard = 0
+        for card in hand:
+            if card[1] == 1: return 1
+            elif card[1] > maxCard: maxCard = card[1]
+        return maxCard
 
-    #checks = [str.royalFlush, str.stFlush, str.fourKind, str.fullHouse, str.flush, str.straight, str.threeKind, str.pairs, str.highCard]
-    def computeHandValue(self, player, possibleHands):
-        handValue = 0
-        checks = [self.highCard]
-        #print len(possibleHands)
-        for hand in possibleHands:
-            for permutations in itertools.permutations(hand, 5):
-                for check in checks:
-                    values = self.getHandValues(hand)
-                    value = check(values)
-                    handValue += value
-                    if value: break
-                if value: break
-        return handValue
-
-
-    ## Go through possibleHands to sum duplicates!
     def computerTakeAction(self, player):
-        possibleHands = []
-        deck = Deck()
-
-        for card in player.peakCards():
-            deck.cards.remove(card)
-        for card in self.river:
-            deck.cards.remove(card)
-        deck = deck.cards
-        for hand in itertools.combinations(iter(deck), TOTAL_POSSIBLE_CARDS - len(player.peakCards()) - len(self.river)):
-            possibleHands.append(hand)
-        for i, hand in enumerate(possibleHands):
-            possibleHands[i] = hand + tuple(player.peakCards())
-        handValue = self.computeHandValue(player, possibleHands)
-        avgHand = float(handValue)/float(len(possibleHands))
-        print avgHand
-        if avgHand > 13: return "Bet"
-        else: return "Fold"
+        
 
     def takeAction(self, player):
         while True:
@@ -176,8 +142,40 @@ def main():
         game.deck = Deck() # Reshuffle Deck
 main()
 
+CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
+CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
+def convertCards(cards):
+    newCards = []
+    for card in cards:
+        suite = CARD_SUITES[card[0]]
+        value = CARD_VALUES[card[1]]
+        newCards.append(value+suite)
+    return newCards
+
+def findProbWinning(self, player):
+    board_state = None
+    if len(self.river) != 0:
+        board_state = convertCards(self.river)
+    hand = convertCards(player.peakCards()) + " ?" + " ?"
+    prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
+    return prob_winning
+
+def feature_extractor(self, player):
+    features = []
+    prob_winning = findProbWinng(player)
+    features.append(prob_winning[1]) # probability of winning given hand
+    features.append(self.pot)
+    for cur_player in self.players:
+        features.append(cur_player.getChipCount())
+        features.append(cur_player.total_Bet())
+    feautures.append(self.numPlayers)
+    return features
+
+
+
+
 ## Use github prob like this:
 # parallel_holdem_calc.calculate(None, True, 1, None, ["8s", "7s", "Ad", "Ac"], False)
-# where params are (Board state, "Exact param" should be false, num iters of Monte Carlo sim, Filename - should be false, 
+# where params are (Board state, "Exact param" should be false, num iters of Monte Carlo sim, Filename - should be false,
 #   Hole cards (2 for each player), verbose - should be false)
 # return is array of [ (prob of tie), (prob of player 1 winning), (prob of player 2 winning), ... etc]
