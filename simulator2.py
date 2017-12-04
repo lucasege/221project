@@ -38,6 +38,19 @@ class HoldemSimulator:
             player.bet(amount)
             return
 
+    def straight(self, hand):
+        total = hand + self.river
+        if len(total) < 5: return False
+        best = 0
+        for start in total:
+            current = start[1]
+            for i in range(5):
+                current +=1
+                if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
+                if i == 4 and current > best: best = current
+        if best > 0: return best
+        return None
+
     def nKind(self, hand, N, flush):
         allCards = self.river + hand
         index = 1
@@ -57,7 +70,7 @@ class HoldemSimulator:
             if count[key] == 3:
                 triple = key
         for key in count:
-            if count[key] == 2 && key != triple:
+            if count[key] == 2 and key != triple:
                 return True, key, triple
         return False, None, None
 
