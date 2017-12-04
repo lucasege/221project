@@ -3,6 +3,7 @@ from player import Player
 import random, collections, math, itertools
 from collections import Counter
 import parallel_holdem_calc
+import holdem_calc
 
 FLOP = 3
 TURN = 1
@@ -47,8 +48,8 @@ class HoldemSimulator:
             current = start[1]
             for i in range(5):
                 current +=1
-                if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
-                if i == 4 and current > best: best = current
+                # if !((0,current+1) in total or (1,current+1) in total or (2,current+1) in total or (3,current+1) in total): break
+                # if i == 4 and current > best: best = current
         if best > 0: return best
         return None
 
@@ -170,11 +171,15 @@ def main():
     #numPlayers = input("Number of players: ")
     #startAmount = input("Start Amount: ")
     #numComputer = input("How many of players will be computers? : ")
-    game = HoldemSimulator(2, 1000, 1)
-    for i in range(5):
-        game.newDeal()
-        game.deck = Deck() # Reshuffle Deck
-main()
+    print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
+    # game = HoldemSimulator(2, 1000, 1)
+    # for i in range(5):
+    #     game.newDeal()
+    #     game.deck = Deck() # Reshuffle Deck
+    
+if __name__ == "__main__":
+    main()
 
 ## Use github prob like this:
 # parallel_holdem_calc.calculate(None, True, 1, None, ["8s", "7s", "Ad", "Ac"], False)
