@@ -241,7 +241,7 @@ class HoldemSimulator:
             if player.prevState is not None:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
         for player in self.players:
-            if player not in winners and player.isComputer:
+            if player not in winners and player.isComputer and player.prevState is not None:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot, player)
         self.roundOver = True
         self.firstRound = True
