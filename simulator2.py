@@ -5,6 +5,7 @@ from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
 import qlearning
+from deuces import Card, Evaluator
 
 FLOP = 3
 TURN = 1
@@ -260,10 +261,28 @@ def findProbWinning(self, player):
     prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
     return prob_winning
 
+def convertToDeuces(cards):
+    newCards = []
+    for card in cards:
+        suit = CARD_SUITES[card[0]]
+        value = CARD_VALUES[card[1]]
+        newCards.append(Card.new(value + suit))
+    return newCards
+
+
+def getProbWinning(self, player):
+    board = None
+    if len(self.river) != 0:
+        board = convertToDeuces(self.river)
+    hand = convertToDeuces(player.peakCards())
+    evaluator = Evaluator()
+    prob_winning = evaluator.evaluate(board, hand)
+
 
 def feature_extractor(self, player):
     features = []
-    prob_winning = findProbWinning(player)
+    # prob_winning = getProbWinning(player)
+    prob_winning = findDeucesProbWinning(player)
     features.append(prob_winning[1]) # probability of winning given hand
     features.append(self.pot)
     for cur_player in self.players:
