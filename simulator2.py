@@ -62,8 +62,8 @@ class HoldemSimulator:
         self.games += 1
         self.players = []
         i = 0
-        self.players.append(Player(startAmount,0,True))
-        self.players.append(Player(startAmount,1,False))
+        self.players.append(Player(self.startAmount,0,True))
+        self.players.append(Player(self.startAmount,1,False))
         self.resetRound()
 
     def straight(self, hand):
@@ -380,11 +380,12 @@ def playGame(sim):
 
 def main():
     sim = HoldemSimulator(2,2000,1)
-    for i in range(1):
+    for i in range(1000):
         playGame(sim)
-
-    print sim.players
-        #sim.resetGame()
+        print sim.players
+        sim.resetGame()
+    print sim.wins, sim.games
+    #sim.resetGame()
     # game.test()
     # game.decideGame()
 
