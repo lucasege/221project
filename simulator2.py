@@ -288,7 +288,7 @@ def convertToDeuces(cards):
     for card in cards:
         suit = CARD_SUITES[card[0]]
         value = CARD_VALUES[card[1]]
-        newCards.append(Card.new(value + suit))
+        newCards.append(Card.new(str(value + suit)))
     return newCards
 
 
