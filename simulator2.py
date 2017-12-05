@@ -97,7 +97,7 @@ class HoldemSimulator:
         return maxCard
 
     # def computerTakeAction(self, player):
-        
+
     def takeAction(self, player):
         while True:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
@@ -239,42 +239,23 @@ class HoldemSimulator:
 def gameExplanation():
     print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
-def main():
-    game = HoldemSimulator(2,1000,1)
-    game.test()
-    # game.decideGame()
+# CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
+# CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
+# def convertCards(cards):
+#     newCards = []
+#     for card in cards:
+#         suite = CARD_SUITES[card[0]]
+#         value = CARD_VALUES[card[1]]
+#         newCards.append(value+suite)
+#     return newCards
 
-    #gameExplanation()
-    #numPlayers = input("Number of players: ")
-    #startAmount = input("Start Amount: ")
-    #numComputer = input("How many of players will be computers? : ")
-    # print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
-    # print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
-    game = HoldemSimulator(2, 1000, 1)
-    for i in range(5):
-        game.newDeal()
-        game.deck = Deck() # Reshuffle Deck
-    
-if __name__ == "__main__":
-    main()
-
-CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
-CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
-def convertCards(cards):
-    newCards = []
-    for card in cards:
-        suite = CARD_SUITES[card[0]]
-        value = CARD_VALUES[card[1]]
-        newCards.append(value+suite)
-    return newCards
-
-def findProbWinning(self, player):
-    board_state = None
-    if len(self.river) != 0:
-        board_state = convertCards(self.river)
-    hand = convertCards(player.peakCards()) + " ?" + " ?"
-    prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
-    return prob_winning
+# def findProbWinning(self, player):
+#     board_state = None
+#     if len(self.river) != 0:
+#         board_state = convertCards(self.river)
+#     hand = convertCards(player.peakCards()) + " ?" + " ?"
+#     prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
+#     return prob_winning
 
 def convertToDeuces(cards):
     newCards = []
@@ -310,8 +291,6 @@ def feature_extractor(self, player):
     state = []
     # probability of winning given hand
     state.append(int(findDeucesProbWinning(player)))
-    # prob_winning = findDeucesProbWinning(player)
-    # state.append(int(findProbWinng(player)[1])) 
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
@@ -336,3 +315,18 @@ def feature_extractor(self, player):
 # where params are (Board state, "Exact param" should be false, num iters of Monte Carlo sim, Filename - should be false,
 #   Hole cards (2 for each player), verbose - should be false)
 # return is array of [ (prob of tie), (prob of player 1 winning), (prob of player 2 winning), ... etc]
+
+
+def main():
+    game = HoldemSimulator(2,1000,2)
+    game.test()
+    # game.decideGame()
+
+    gameExplanation()
+    game = HoldemSimulator(2, 1000, 1)
+    for i in range(5):
+        game.newDeal()
+        game.deck = Deck() # Reshuffle Deck
+    
+if __name__ == "__main__":
+    main()
