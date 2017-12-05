@@ -1,4 +1,4 @@
-import util, random, math
+import util, random, math, sys
 from collections import defaultdict
 
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
@@ -29,7 +29,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # |explorationProb|, take a random action.
     def getAction(self, state):
         self.numIters += 1
-        
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
@@ -45,7 +44,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # self.getQ() to compute the current estimate of the parameters.
     def incorporateFeedback(self, state, action, reward, newState):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
-        
         if newState == None: return
         vhat = max([self.getQ(newState, a) for a in self.actions])
         Qopt = self.getQ(state, action)
@@ -65,3 +63,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
         #         self.weights[f] -= sub
         # else:
         #     return None
+
+    def printWeights(self):
+        print self.weights

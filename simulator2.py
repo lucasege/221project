@@ -6,6 +6,7 @@ import parallel_holdem_calc
 import holdem_calc
 import qlearning
 from deuces import Card, Evaluator
+import sys
 
 FLOP = 3
 TURN = 1
@@ -29,7 +30,6 @@ class HoldemSimulator:
         self.curRaise = 0
         self.roundOver = False
         self.firstRound = True
-        self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
         self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.2)
 
         self.players.append(Player(startAmount,0,True))
@@ -39,6 +39,11 @@ class HoldemSimulator:
     def gameOver(self):
         for player in self.players:
             if player.getChipCount() == 0: 
+                # file = open("weights.txt","w")
+                # for key, val in self.qlearn.weights:
+                #     print key
+                #     file.write(key,val)
+                # file.close()
                 if not player.isComputer: self.wins += 1
                 return True
         return False
@@ -136,29 +141,28 @@ class HoldemSimulator:
     def computerTakeAction(self, player):
         nextAction = self.qlearn.getAction(player)
         if self.curRaise + 250 > player.chips and nextAction == "Raise": #ISAAC CHECK LOGIC
-            nextAction = random.choice(["Check", "Fold"]) 
-        if not self.firstRound and player.prevState is not None: # incorporate feedback yet
+            nextAction = "Check" #random.choice(["Check", "Fold"]) #changed to check Lucas Look
+        if not self.firstRound and player.prevState is not None: # incorporate feedback
             self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player)
-            player.prevState = player
-            player.prevAction = nextAction
         else:
             self.firstRound = False
+        player.prevState = player
+        player.prevAction = nextAction
         return nextAction
         
     def takeAction(self, player):
         while True:
-            print "Player ", player.getindex(), " cards are ", player.peakCards()
-
-            if player.isComputer: 
+            #print "Player ", player.getindex(), " cards are ", player.peakCards()
+            if player.isComputer:
                 action = self.computerTakeAction(player)
-                self.actions += 1
-                if action == "Fold":
-                    self.folds += 1
-            else: action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
+            else: 
+                if player.getChipCount() >= self.curRaise + 250:
+                    action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
+                else: action = random.choice(["Fold", "Check"])
 
             actionL = action.split(",")
             if actionL[0] == "Raise": 
-                if self.curRaise + 250 < player.getChipCount():
+                if self.curRaise + 250 <= player.getChipCount():
                     player.bet(250 + self.curRaise)
                     self.pot += self.curRaise + 250
                     self.curRaise = 250
@@ -173,17 +177,17 @@ class HoldemSimulator:
             if actionL[0] == "Check":
                 toPot = self.curRaise
                 if self.curRaise > player.getChipCount(): toPot = player.getChipCount()
-                self.pot =+ toPot
+                self.pot += toPot
                 player.bet(toPot)
                 self.curRaise = 0
                 break
                 
-            print "Invalid Action, please try again"
+            print action, "Invalid Action, please try again"
         if self.roundOver and not self.firstRound and player.isComputer and player.prevState is not None:
             if actionL[0] != "Fold":
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
             else:
-                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot, player)
+                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player) #-self.pot, player)
             self.firstRound = True
             player.prevAction = None
             player.prevState = None
@@ -253,7 +257,7 @@ class HoldemSimulator:
             if player.prevState is not None:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
         for player in self.players:
-            if player not in winners and player.isComputer and player.prevState is not None:
+           if player not in winners and player.isComputer and player.prevState is not None:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot, player)
         self.roundOver = True
         self.firstRound = True
@@ -350,7 +354,7 @@ def feature_extractor(sim, player):
 def playTurn(sim, first, second):
     while True:
         sim.takeAction(sim.players[first]) 
-        if sim.roundOver or sim.curRaise == 0: break
+        if sim.roundOver: break
         sim.takeAction(sim.players[second])
         if sim.roundOver or sim.curRaise == 0: break
 
@@ -359,9 +363,9 @@ def playGame(sim):
     second = 1
     while True:
         if sim.gameOver(): break
-        temp = first    # switches who bets first
-        first = second
-        second = first
+        temp = int(first)    # switches who bets first
+        first = int(second)
+        second = int(temp)
         sim.resetRound()
 
         playTurn(sim, first, second)
@@ -386,10 +390,12 @@ def playGame(sim):
 
 def main():
     sim = HoldemSimulator(2,2000,1)
-    for i in range(100000):
+    for i in range(1000):
         playGame(sim)
         print sim.players
+        sys.stdout.flush()
         sim.resetGame()
+    sim.qlearn.printWeights()
     print sim.wins, sim.games
     print sim.folds, sim.actions
     #sim.resetGame()
