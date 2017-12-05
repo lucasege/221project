@@ -20,7 +20,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
         score = 0
-        print self.featureExtractor(self.sim, state)
         for f, v in self.featureExtractor(self.sim, state):
             score += self.weights[f] * v
         return score
@@ -30,6 +29,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # |explorationProb|, take a random action.
     def getAction(self, state):
         self.numIters += 1
+        
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
@@ -47,7 +47,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
         
         if newState == None: return
-        vhat = max([self.getQ(newState, a) for a in self.actions(newState)])
+        vhat = max([self.getQ(newState, a) for a in self.actions])
         Qopt = self.getQ(state, action)
         for k,v in self.featureExtractor(self.sim, state):
             self.weights[k] = self.weights.get(k,0) - self.getStepSize()*(Qopt-(reward + self.discount*vhat))

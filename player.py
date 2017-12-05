@@ -6,6 +6,8 @@ class Player:
 		self.totalBets = 0
 		self.numRaises = 0
 		self.isComputer = isComputer
+		self.prevState = None
+		self.prevAction = None
 
 	def __repr__(self):
 		return str(self.index) + ", " + str(self.chips)

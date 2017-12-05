@@ -5,7 +5,7 @@ from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
 import qlearning
-#from deuces import Card, Evaluator
+from deuces import Card, Evaluator
 
 FLOP = 3
 TURN = 1
@@ -25,8 +25,6 @@ class HoldemSimulator:
         self.curRaise = 0
         self.roundOver = False
         self.firstRound = True
-        self.prevState = None
-        self.prevAction = None
         self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
         self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.1)
         i = 0
@@ -125,10 +123,12 @@ class HoldemSimulator:
         nextAction = self.qlearn.getAction(player)
         if self.curRaise + 250 > player.chips and nextAction == "Raise": #ISAAC CHECK LOGIC
             nextAction = random.choice(["Check", "Fold"]) 
-        if not self.firstRound and self.prevState is not None: # incorporate feedback yet
-            self.qlearn.incorporateFeedback(self.prevState, self.prevAction, 0, player)
-            self.prevState = player
-            self.prevAction = nextAction
+        if not self.firstRound and player.prevState is not None: # incorporate feedback yet
+            self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player)
+            player.prevState = player
+            player.prevAction = nextAction
+        else:
+            self.firstRound = False
         return nextAction
         
     def takeAction(self, player):
@@ -225,7 +225,11 @@ class HoldemSimulator:
 
         for player in winners:
             player.winRound(self.pot/float(len(winners)))
+            self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot/float(len(winners)), player)
             print "Player ", player, " won ", self.pot/float(len(winners))
+        for player in self.players:
+            if player not in winners:
+                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot/float(len(winners)), player)
         self.roundOver = True
 
     # def newDeal(self):
