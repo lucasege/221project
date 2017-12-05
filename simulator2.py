@@ -141,10 +141,10 @@ class HoldemSimulator:
             actionL = action.split(",")
             print actionL
             if actionL[0] == "Raise": 
-                if len(actionL) == 2 and actionL[1] + self.curRaise < player.getChipCount():
-                    player.bet(int(actionL[1]) + self.curRaise)
-                    self.pot += self.curRaise + actionL[1]
-                    self.curRaise = actionL[1]
+                if self.curRaise + 250 < player.getChipCount():
+                    player.bet(250 + self.curRaise)
+                    self.pot += self.curRaise + 250
+                    self.curRaise = 250
                     player.incRaise()
                     break
             if actionL[0] == "Fold": 
