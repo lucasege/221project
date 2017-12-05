@@ -49,6 +49,12 @@ class HoldemSimulator:
         self.roundOver = False
         for player in self.players:
             player.takeCards()
+            if player.getChipCount() < 250:
+                self.pot += player.getChipCount()
+                player.bet(player.getChipCount())
+            else: 
+                player.bet(250)
+                self.pot += 250
             player.dealCard(self.deck.getRandomCard())
             player.dealCard(self.deck.getRandomCard())
 
@@ -373,7 +379,7 @@ def playGame(sim):
 
 
 def main():
-    sim = HoldemSimulator(2,500,1)
+    sim = HoldemSimulator(2,2000,1)
     for i in range(1):
         playGame(sim)
 
