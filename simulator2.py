@@ -37,7 +37,7 @@ class HoldemSimulator:
     def gameOver(self):
         for player in self.players:
             if player.getChipCount() == 0: 
-                if player.getindex == 1: self.wins += 1
+                if not player.isComputer: self.wins += 1
                 return True
         return False
 
@@ -380,9 +380,10 @@ def playGame(sim):
 
 def main():
     sim = HoldemSimulator(2,2000,1)
-    for i in range(1):
+    for i in range(1000):
         playGame(sim)
-
+        sim.resetGame()
+    print sim.games, sim.wins
     print sim.players
         #sim.resetGame()
     # game.test()
