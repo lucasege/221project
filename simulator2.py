@@ -4,6 +4,7 @@ import random, collections, math, itertools
 from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
+import qlearning
 
 FLOP = 3
 TURN = 1
@@ -110,6 +111,8 @@ class HoldemSimulator:
     def takeAction(self, player):
         while True:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
+            qlearn = qlearning.QLearningAlgorithm(["Bet", "Fold", "Check"], 0.9, feature_extractor, 0.2)
+
             if player.isComputer: action = self.computerTakeAction(player)
             else: action = raw_input("Take Action (Bet, Fold, Check): ")
             if action == "Bet": return self.bet(player)
@@ -231,10 +234,10 @@ def main():
     #numComputer = input("How many of players will be computers? : ")
     # print holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
     # print parallel_holdem_calc.calculate(None, False, 1, None, ["8s", "6s", "?", "?"], False)
-    # game = HoldemSimulator(2, 1000, 1)
-    # for i in range(5):
-    #     game.newDeal()
-    #     game.deck = Deck() # Reshuffle Deck
+    game = HoldemSimulator(2, 1000, 1)
+    for i in range(5):
+        game.newDeal()
+        game.deck = Deck() # Reshuffle Deck
     
 if __name__ == "__main__":
     main()
@@ -257,9 +260,10 @@ def findProbWinning(self, player):
     prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
     return prob_winning
 
+
 def feature_extractor(self, player):
     features = []
-    prob_winning = findProbWinng(player)
+    prob_winning = findProbWinning(player)
     features.append(prob_winning[1]) # probability of winning given hand
     features.append(self.pot)
     for cur_player in self.players:
