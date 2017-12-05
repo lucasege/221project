@@ -5,6 +5,7 @@ from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
 import qlearning
+from deuces import Card, Evaluator
 
 FLOP = 3
 TURN = 1
@@ -239,11 +240,11 @@ def gameExplanation():
     print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
 def main():
-    # game = HoldemSimulator(2,1000,1)
-    # game.test()
+    game = HoldemSimulator(2,1000,1)
+    game.test()
     # game.decideGame()
 
-    gameExplanation()
+    #gameExplanation()
     #numPlayers = input("Number of players: ")
     #startAmount = input("Start Amount: ")
     #numComputer = input("How many of players will be computers? : ")
@@ -275,6 +276,23 @@ def findProbWinning(self, player):
     prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
     return prob_winning
 
+def convertToDeuces(cards):
+    newCards = []
+    for card in cards:
+        suit = CARD_SUITES[card[0]]
+        value = CARD_VALUES[card[1]]
+        newCards.append(Card.new(str(value + suit)))
+    return newCards
+
+
+def findDeucesProbWinning(self, player):
+    board = None
+    if len(self.river) != 0:
+        board = convertToDeuces(self.river)
+    hand = convertToDeuces(player.peakCards())
+    evaluator = Evaluator()
+    prob_winning = evaluator.evaluate(board, hand)
+
 
 # def feature_extractor(self, player):
 #     features = []
@@ -291,7 +309,9 @@ def findProbWinning(self, player):
 def feature_extractor(self, player):
     state = []
     # probability of winning given hand
-    state.append(int(findProbWinng(player)[1])) 
+    state.append(int(findDeucesProbWinning(player)))
+    # prob_winning = findDeucesProbWinning(player)
+    # state.append(int(findProbWinng(player)[1])) 
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
@@ -308,7 +328,6 @@ def feature_extractor(self, player):
     if ration > 1: ratio = 1
     state.append(int(100*ratio))
     return state
-
 
 
 
