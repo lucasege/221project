@@ -135,6 +135,7 @@ class HoldemSimulator:
             else: action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
 
             actionL = action.split(",")
+            print actionL
             if actionL[0] == "Raise": 
                 if len(actionL) == 2 and actionL[1] + self.curRaise < player.getChipCount():
                     player.bet(int(actionL[1]) + self.curRaise)
