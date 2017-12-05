@@ -17,6 +17,8 @@ class HoldemSimulator:
     def __init__(self, numPlayers, startAmount, numComputers):
         self.games = 0
         self.wins = 0
+        self.folds = 0
+        self.actions = 0
         self.numPlayers = numPlayers
         self.numComputers = numComputers
         self.startAmount = startAmount
@@ -147,7 +149,11 @@ class HoldemSimulator:
         while True:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
 
-            if player.isComputer: action = self.computerTakeAction(player)
+            if player.isComputer: 
+                action = self.computerTakeAction(player)
+                self.actions += 1
+                if action == "Fold":
+                    self.folds += 1
             else: action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
 
             actionL = action.split(",")
@@ -380,11 +386,12 @@ def playGame(sim):
 
 def main():
     sim = HoldemSimulator(2,2000,1)
-    for i in range(1000):
+    for i in range(100000):
         playGame(sim)
         print sim.players
         sim.resetGame()
     print sim.wins, sim.games
+    print sim.folds, sim.actions
     #sim.resetGame()
     # game.test()
     # game.decideGame()
