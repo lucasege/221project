@@ -268,6 +268,18 @@ def feature_extractor(self, player):
     feautures.append(self.numPlayers)
     return features
 
+#prob winning, playerRank, opponentraises,
+def feature_extractor2(self, player):
+    features = []
+    prob_winning = findProbWinng(player)
+    features.append(prob_winning[1]) # probability of winning given hand
+    features.append(self.pot)
+    for cur_player in self.players:
+        features.append(cur_player.getChipCount())
+        features.append(cur_player.total_Bet())
+    feautures.append(self.numPlayers)
+    return features
+
 
 
 
