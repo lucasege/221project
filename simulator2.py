@@ -24,25 +24,9 @@ class HoldemSimulator:
         self.discardPile = []
         self.roundOver = False
         self.gameOver = False
-        self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
         i = 0
         for i in range((self.numPlayers - numComputers)): self.players.append(Player(startAmount, i, False))
         for j in range(numComputers): self.players.append(Player(startAmount, i+j+1, True))
-
-    def dealCards(self):
-        for player in self.players:
-            if player.getChipCount <= 0: continue
-            player.dealCard(self.deck.getRandomCard())
-            player.dealCard(self.deck.getRandomCard())
-
-    # def bet(self, player):
-    #     while True:
-    #         amount = input("Amount: ")
-    #         if amount > player.getChipCount(): continue
-    #         self.curRaise = amount - self.pot
-    #         self.pot += amount
-    #         player.bet(amount)
-    #         return
 
     def straight(self, hand):
         total = hand + self.river
@@ -77,8 +61,11 @@ class HoldemSimulator:
         if flush: index = 0
         values = [int(i[index]) for i in allCards]
         count = Counter(values)
+        best = 0
         for key in count:
-            if count[key] == N: return (True, key)
+            if count[key] == N and key > best: 
+                best = key
+        if best > 0: return (True, best)
         return (False, None)
 
     def fullHouse(self, hand, twoPair):
@@ -142,21 +129,6 @@ class HoldemSimulator:
                 
             print "Invalid Action, please try again"
 
-    def newDeal(self):
-        self.pot = 0
-        self.curRaise = 0
-        self.turn = 0
-        self.dealCards()
-        for i in range(TURNS):
-            self.newRound()
-            self.roundResults()
-            self.turn += 1
-
-    def newRound(self):
-        for index, player in enumerate(self.players):
-            if player.cards == []: continue # Previous Fold
-            self.takeAction(player)
-
     #sf:8, 4k:7, fh:6, f:5, s:4, 3k:3, 22k:2, 2k:1, h:0
     def decideGame(self):
         totals = []
@@ -219,6 +191,27 @@ class HoldemSimulator:
         for player in winners:
             player.winRound(self.pot/float(len(winners)))
             print "Player ", player, " won ", self.pot/float(len(winners))
+
+    def newDeal(self):
+        self.pot = 0
+        self.curRaise = 0
+        self.turn = 0
+        self.dealCards()
+        for i in range(TURNS):
+            self.newRound()
+            self.roundResults()
+            self.turn += 1
+
+    def dealCards(self):
+        for player in self.players:
+            if player.getChipCount <= 0: continue
+            player.dealCard(self.deck.getRandomCard())
+            player.dealCard(self.deck.getRandomCard())
+
+    def newRound(self):
+        for index, player in enumerate(self.players):
+            if player.cards == []: continue # Previous Fold
+            self.takeAction(player)
 
     def roundResults(self):
         if self.turn == 0:
