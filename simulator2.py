@@ -24,9 +24,15 @@ class HoldemSimulator:
         self.pot = 0
         self.curRaise = 0
         self.roundOver = False
+        self.firstRound = True
+        self.prevState = None
+        self.prevAction = None
+        self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
+        self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.1)
         i = 0
         for i in range((self.numPlayers - numComputers)): self.players.append(Player(startAmount, i, False))
         for j in range(numComputers): self.players.append(Player(startAmount, i+j+1, True))
+
 
     def gameOver(self):
         for player in self.players:
@@ -80,11 +86,8 @@ class HoldemSimulator:
         if flush: index = 0
         values = [int(i[index]) for i in allCards]
         count = Counter(values)
-        best = 0
         for key in count:
-            if count[key] == N and key > best: 
-                best = key
-        if best > 0: return (True, best)
+            if count[key] == N: return (True, key)
         return (False, None)
 
     def fullHouse(self, hand, twoPair):
@@ -114,18 +117,20 @@ class HoldemSimulator:
             elif card[1] > maxCard: maxCard = card[1]
         return maxCard
 
-    # def computerTakeAction(self, player):
-
+    def computerTakeAction(self, player):
+        nextAction = self.qlearn.getAction(player)
+        if not self.firstRound and self.prevState is not None: # incorporate feedback yet
+            self.qlearn.incorporateFeedback(self.prevState, self.prevAction, 0, player)
+            self.prevState = player
+            self.prevAction = nextAction
+        return nextAction
+        
     def takeAction(self, player):
         while True:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
-            # qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, 0.2)
 
-            if player.isComputer: 
-                action = self.computerTakeAction(player)
-                print "hi"
-            else: 
-                action = raw_input("Take Action (Bet, Fold, Check): ")
+            if player.isComputer: action = self.computerTakeAction(player)
+            else: action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
 
             actionL = action.split(",")
             if actionL[0] == "Raise": 
@@ -143,13 +148,14 @@ class HoldemSimulator:
                 break
             if actionL[0] == "Check":
                 toPot = self.curRaise
-                if curRaise > player.getChipCount(): toPot = player.getChipCount()
+                if self.curRaise > player.getChipCount(): toPot = player.getChipCount()
                 self.pot =+ toPot
                 player.bet(toPot)
                 self.curRaise = 0
                 break
                 
             print "Invalid Action, please try again"
+
 
     #sf:8, 4k:7, fh:6, f:5, s:4, 3k:3, 22k:2, 2k:1, h:0
     def decideGame(self):
@@ -245,8 +251,6 @@ class HoldemSimulator:
     #     print " "
     #     print "River Cards: ", self.river
 
-
-
     # used to test simulator
     def test(self):
         self.players[0].dealCard((1,1))
@@ -263,23 +267,23 @@ class HoldemSimulator:
 def gameExplanation():
     print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
-# CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
-# CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
-# def convertCards(cards):
-#     newCards = []
-#     for card in cards:
-#         suite = CARD_SUITES[card[0]]
-#         value = CARD_VALUES[card[1]]
-#         newCards.append(value+suite)
-#     return newCards
+CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
+CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
+def convertCards(cards):
+    newCards = []
+    for card in cards:
+        suite = CARD_SUITES[card[0]]
+        value = CARD_VALUES[card[1]]
+        newCards.append(value+suite)
+    return newCards
 
-# def findProbWinning(self, player):
-#     board_state = None
-#     if len(self.river) != 0:
-#         board_state = convertCards(self.river)
-#     hand = convertCards(player.peakCards()) + " ?" + " ?"
-#     prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
-#     return prob_winning
+def findProbWinning(self, player):
+    board_state = None
+    if len(self.river) != 0:
+        board_state = convertCards(self.river)
+    hand = convertCards(player.peakCards()) + " ?" + " ?"
+    prob_winning = parallel_holdem_calc.calculate(board_state, False, 1, hand, False)
+    return prob_winning
 
 def convertToDeuces(cards):
     newCards = []
@@ -289,15 +293,15 @@ def convertToDeuces(cards):
         newCards.append(Card.new(str(value + suit)))
     return newCards
 
-
-def findDeucesProbWinning(self, player):
+def findDeucesProbWinning(sim, player):
     board = None
-    if len(self.river) != 0:
-        board = convertToDeuces(self.river)
+    if len(sim.river) != 0:
+        board = convertToDeuces(sim.river)
+    else:
+        return 0
     hand = convertToDeuces(player.peakCards())
     evaluator = Evaluator()
     prob_winning = evaluator.evaluate(board, hand)
-
 
 # def feature_extractor(self, player):
 #     features = []
@@ -311,28 +315,26 @@ def findDeucesProbWinning(self, player):
 #     return features
 
 #prob winning, playerRank, opponentraises, pre-flop rating, bet/holdings, turn
-def feature_extractor(self, player):
+def feature_extractor(sim, player):
     state = []
     # probability of winning given hand
-    #state.append(int(findDeucesProbWinning(player)))
+    state.append(('deuceprob', (int(findDeucesProbWinning(sim, player)))))
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
-    if self.players[opponent].getChipCount > player.getChipCount: state.append(0)
-    else: state.append(1) 
+    if sim.players[opponent].getChipCount > player.getChipCount: state.append(('winning', 0))
+    else: state.append(('winning', 1))
     # opponent raises 
-    state.append(self.players[opponent].getNumRaises())
+    state.append(('oppraises', sim.players[opponent].getNumRaises()))
     # preflop rating
     #state.append(preFlopRate(player))
     # turn number
-    state.append(len(self.river))
+    state.append(('turnNum', (len(sim.river))))
     # curRaise/holdings 
-    ratio = self.curRaise/float(player.getChipCount())
-    if ration > 1: ratio = 1
-    state.append(int(100*ratio))
+    ratio = sim.curRaise/float(player.getChipCount())
+    if ratio > 1: ratio = 1
+    state.append(('ratio', int(100*ratio)))
     return state
-
-
 
 ## Use github prob like this:
 # parallel_holdem_calc.calculate(None, True, 1, None, ["8s", "7s", "Ad", "Ac"], False)
@@ -388,6 +390,7 @@ def main():
     # for i in range(5):
     #     game.newDeal()
     #     game.deck = Deck() # Reshuffle Deck
+
     
 if __name__ == "__main__":
     main()

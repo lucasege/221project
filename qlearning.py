@@ -8,18 +8,20 @@ from collections import defaultdict
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(util.RLAlgorithm):
-    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
+    def __init__(self, actions, discount, featureExtractor, simulator, explorationProb=0.2):
         self.actions = actions
         self.discount = discount
         self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
         self.weights = defaultdict(float)
         self.numIters = 0
+        self.sim = simulator
 
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
         score = 0
-        for f, v in self.featureExtractor(state, action):
+        print self.featureExtractor(self.sim, state)
+        for f, v in self.featureExtractor(self.sim, state):
             score += self.weights[f] * v
         return score
 
@@ -29,9 +31,9 @@ class QLearningAlgorithm(util.RLAlgorithm):
     def getAction(self, state):
         self.numIters += 1
         if random.random() < self.explorationProb:
-            return random.choice(self.actions(state))
+            return random.choice(self.actions)
         else:
-            return max((self.getQ(state, action), action) for action in self.actions(state))[1]
+            return max((self.getQ(state, action), action) for action in self.actions)[1]
 
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
@@ -44,22 +46,22 @@ class QLearningAlgorithm(util.RLAlgorithm):
     def incorporateFeedback(self, state, action, reward, newState):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
         
-        # if newState == None: return
-        # vhat = max([self.getQ(newState, a) for a in self.actions(newState)])
-        # Qopt = self.getQ(state, action)
-        # for k,v in self.featureExtractor(state, action):
-        #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*(Qopt-(reward + self.discount*vhat))
+        if newState == None: return
+        vhat = max([self.getQ(newState, a) for a in self.actions(newState)])
+        Qopt = self.getQ(state, action)
+        for k,v in self.featureExtractor(self.sim, state):
+            self.weights[k] = self.weights.get(k,0) - self.getStepSize()*(Qopt-(reward + self.discount*vhat))
 
 
-        if newState != None:
-            eta = self.getStepSize()
-            vOpt = max((self.getQ(newState, action), action) for action in self.actions(newState))[0]
-            rightHand = (reward + self.discount * vOpt)
-            leftHand = self.getQ(state, action)
-            feature = self.featureExtractor(state, action)
-            for f, v in self.featureExtractor(state, action):
-                mult = eta * (leftHand - rightHand)
-                sub = mult * v
-                self.weights[f] -= sub
-        else:
-            return None
+        # if newState != None:
+        #     eta = self.getStepSize()
+        #     vOpt = max((self.getQ(newState, action), action) for action in self.actions(newState))[0]
+        #     rightHand = (reward + self.discount * vOpt)
+        #     leftHand = self.getQ(state, action)
+        #     feature = self.featureExtractor(state)
+        #     for f, v in self.featureExtractor(state):
+        #         mult = eta * (leftHand - rightHand)
+        #         sub = mult * v
+        #         self.weights[f] -= sub
+        # else:
+        #     return None
