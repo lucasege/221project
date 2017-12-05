@@ -68,6 +68,7 @@ class HoldemSimulator:
             count = 0
             while True:# j in range(1,5):
                 count += 1
+                if i + count < len(sTotal): break
                 if sTotal[i+count][0] < current[0]+1: 
                     continue
                 elif sTotal[i+count][0] == current[0]+1: 
@@ -232,36 +233,6 @@ class HoldemSimulator:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot/float(len(winners)), player)
         self.roundOver = True
 
-    # def newDeal(self):
-    #     self.pot = 0
-    #     self.curRaise = 0
-    #     self.turn = 0
-    #     self.dealCards()
-    #     for i in range(TURNS):
-    #         self.newRound()
-    #         self.roundResults()
-    #         self.turn += 1
-
-    # def dealCards(self):
-    #     for player in self.players:
-    #         if player.getChipCount <= 0: continue
-    #         player.dealCard(self.deck.getRandomCard())
-    #         player.dealCard(self.deck.getRandomCard())
-
-    # def newRound(self):
-    #     for index, player in enumerate(self.players):
-    #         if player.cards == []: continue # Previous Fold
-    #         self.takeAction(player)
-
-    # def roundResults(self):
-    #     if self.turn == 0:
-    #         for i in range(FLOP):
-    #             self.river.append(self.deck.getRandomCard())
-    #     elif self.turn <= 2: self.river.append(self.deck.getRandomCard())
-    #     else: self.decideGame()
-    #     print " "
-    #     print "River Cards: ", self.river
-
     # used to test simulator
     def test(self):
         self.players[0].dealCard((1,1))
@@ -319,16 +290,6 @@ def findDeucesProbWinning(sim, player):
     prob_winning = evaluator.evaluate(board, hand)
     return prob_winning
 
-# def feature_extractor(self, player):
-#     features = []
-#     prob_winning = findProbWinning(player)
-#     features.append(prob_winning[1]) # probability of winning given hand
-#     features.append(self.pot)
-#     for cur_player in self.players:
-#         features.append(cur_player.getChipCount())
-#         features.append(cur_player.total_Bet())
-#     feautures.append(self.numPlayers)
-#     return features
 
 #prob winning, playerRank, opponentraises, pre-flop rating, bet/holdings, turn
 def feature_extractor(sim, player):
@@ -361,6 +322,7 @@ def feature_extractor(sim, player):
 def playTurn(sim, first, second):
     while True:
         sim.takeAction(sim.players[first]) 
+        if sim.roundOver or sim.curRaise == 0: break
         sim.takeAction(sim.players[second])
         if sim.roundOver or sim.curRaise == 0: break
 
