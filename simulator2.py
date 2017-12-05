@@ -115,6 +115,8 @@ class HoldemSimulator:
 
     def computerTakeAction(self, player):
         nextAction = self.qlearn.getAction(player)
+        if self.curRaise + 250 > player.chips and nextAction == "Raise": #ISAAC CHECK LOGIC
+            nextAction = random.choice(["Check", "Fold"]) 
         if not self.firstRound and self.prevState is not None: # incorporate feedback yet
             self.qlearn.incorporateFeedback(self.prevState, self.prevAction, 0, player)
             self.prevState = player
@@ -255,8 +257,8 @@ class HoldemSimulator:
 def gameExplanation():
     print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
-CARD_SUITES = {0: 's', 1: 'a', 2: 'c', 3: 'h'}
-CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: '10', 11:'J', 12:'Q', 13: 'K'}
+CARD_SUITES = {0: 's', 1: 'h', 2: 'c', 3: 'd'}
+CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: 'T', 11:'J', 12:'Q', 13: 'K'}
 def convertCards(cards):
     newCards = []
     for card in cards:
@@ -278,18 +280,23 @@ def convertToDeuces(cards):
     for card in cards:
         suit = CARD_SUITES[card[0]]
         value = CARD_VALUES[card[1]]
+        #print str(value + suit)
         newCards.append(Card.new(str(value + suit)))
     return newCards
 
 def findDeucesProbWinning(sim, player):
     board = None
+    print len(sim.river)
     if len(sim.river) != 0:
         board = convertToDeuces(sim.river)
     else:
         return 0
+    print board
     hand = convertToDeuces(player.peakCards())
+    print hand
     evaluator = Evaluator()
     prob_winning = evaluator.evaluate(board, hand)
+    return prob_winning
 
 # def feature_extractor(self, player):
 #     features = []
