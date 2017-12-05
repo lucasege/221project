@@ -45,6 +45,10 @@ class HoldemSimulator:
         self.pot = 0
         self.curRaise = 0
         self.roundOver = False
+        for player in self.players:
+            player.takeCards()
+            player.dealCard(self.deck.getRandomCard())
+            player.dealCard(self.deck.getRandomCard())
 
     def resetGame(self):
         self.players = []
