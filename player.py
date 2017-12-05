@@ -4,6 +4,7 @@ class Player:
 		self.index = index
 		self.cards = []
 		self.totalBets = 0
+		self.numRaises = 0
 		self.isComputer = isComputer
 
 	def __repr__(self):
@@ -25,6 +26,12 @@ class Player:
 	def totalBet(self): return self.totalBets
 
 	def isComputer(self): return self.isComputer
+
+	def getNumRaises(self): return self.numRaises
+
+	def incRaise(self): self.numRaises +=1
+
+	def resRaise(self): self.numRaises = 0
 
 	def bet(self, amount):
 		if amount <= self.chips:
