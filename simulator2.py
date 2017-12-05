@@ -5,7 +5,7 @@ from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
 import qlearning
-#from deuces import Card, Evaluator
+from deuces import Card, Evaluator
 
 FLOP = 3
 TURN = 1
@@ -15,6 +15,8 @@ TOTAL_POSSIBLE_CARDS = 7
 
 class HoldemSimulator:
     def __init__(self, numPlayers, startAmount, numComputers):
+        self.games = 0
+        self.wins = 0
         self.numPlayers = numPlayers
         self.numComputers = numComputers
         self.startAmount = startAmount
@@ -29,14 +31,16 @@ class HoldemSimulator:
         self.prevAction = None
         self.weights = [[range(10)],[range(11,20)],[range(21,30)]]
         self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.1)
-        i = 0
-        for i in range((self.numPlayers - numComputers)): self.players.append(Player(startAmount, i, False))
-        for j in range(numComputers): self.players.append(Player(startAmount, i+j+1, True))
+
+        self.players.append(Player(startAmount,0,True))
+        self.players.append(Player(startAmount,1,False))
 
 
     def gameOver(self):
         for player in self.players:
-            if player.getChipCount() == 0: return True
+            if player.getChipCount() == 0: 
+                if player.getindex == 1: self.wins += 1
+                return True
         return False
 
     def resetRound(self):
@@ -51,10 +55,11 @@ class HoldemSimulator:
             player.dealCard(self.deck.getRandomCard())
 
     def resetGame(self):
+        self.games += 1
         self.players = []
         i = 0
-        for i in range((self.numPlayers - self.numComputers)): self.players.append(Player(self.startAmount, i, False))
-        for j in range(self.numComputers): self.players.append(Player(self.startAmount, i+j+1, True))
+        self.players.append(Player(startAmount,0,True))
+        self.players.append(Player(startAmount,1,False))
         self.resetRound()
 
     def straight(self, hand):
@@ -304,8 +309,10 @@ def feature_extractor(sim, player):
     # turn number
     state.append(('turnNum', (len(sim.river))))
     # curRaise/holdings 
-    ratio = sim.curRaise/float(player.getChipCount())
-    if ratio > 1: ratio = 1
+    if player.getChipCount() != 0:
+        ratio = sim.curRaise/float(player.getChipCount())
+        if ratio > 1: ratio = 1
+    else: ratio = 1
     state.append(('ratio', int(100*ratio)))
     return state
 
@@ -323,7 +330,6 @@ def playTurn(sim, first, second):
         if sim.roundOver or sim.curRaise == 0: break
 
 def playGame(sim):
-    sim.resetGame()
     first = 0
     second = 1
     while True:
@@ -354,8 +360,12 @@ def playGame(sim):
 
 
 def main():
-    sim = HoldemSimulator(2,1000,0)
-    playGame(sim)
+    sim = HoldemSimulator(2,500,1)
+    for i in range(1):
+        playGame(sim)
+
+    print sim.players
+        #sim.resetGame()
     # game.test()
     # game.decideGame()
 

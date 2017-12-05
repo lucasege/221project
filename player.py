@@ -1,5 +1,6 @@
 class Player:
 	def __init__(self, startingAmount, index, isComputer):
+		self.wins = 0
 		self.chips = startingAmount
 		self.index = index
 		self.cards = []
@@ -12,6 +13,8 @@ class Player:
 
 	def __str__(self):
 		return str(self.index) + ", " + str(self.chips)
+
+	def getWins(self): return self.wins
 
 	def peakCards(self): return self.cards
 
