@@ -5,7 +5,7 @@ from collections import Counter
 import parallel_holdem_calc
 import holdem_calc
 import qlearning
-from deuces import Card, Evaluator
+#from deuces import Card, Evaluator
 
 FLOP = 3
 TURN = 1
@@ -16,18 +16,36 @@ TOTAL_POSSIBLE_CARDS = 7
 class HoldemSimulator:
     def __init__(self, numPlayers, startAmount, numComputers):
         self.numPlayers = numPlayers
+        self.numComputers = numComputers
         self.startAmount = startAmount
         self.deck = Deck()
         self.players = []
         self.river = []
         self.pot = 0
         self.curRaise = 0
-        self.discardPile = []
         self.roundOver = False
-        self.gameOver = False
         i = 0
         for i in range((self.numPlayers - numComputers)): self.players.append(Player(startAmount, i, False))
         for j in range(numComputers): self.players.append(Player(startAmount, i+j+1, True))
+
+    def gameOver(self):
+        for player in self.players:
+            if player.getChipCount() == 0: return True
+        return False
+
+    def resetRound(self):
+        self.deck = Deck()
+        self.river = []
+        self.pot = 0
+        self.curRaise = 0
+        self.roundOver = False
+
+    def resetGame(self):
+        self.players = []
+        i = 0
+        for i in range((self.numPlayers - self.numComputers)): self.players.append(Player(self.startAmount, i, False))
+        for j in range(self.numComputers): self.players.append(Player(self.startAmount, i+j+1, True))
+        self.resetRound()
 
     def straight(self, hand):
         total = hand + self.river
@@ -103,8 +121,11 @@ class HoldemSimulator:
             print "Player ", player.getindex(), " cards are ", player.peakCards()
             # qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, 0.2)
 
-            if player.isComputer: action = self.computerTakeAction(player)
-            else: action = raw_input("Take Action (Bet, Fold, Check): ")
+            if player.isComputer: 
+                action = self.computerTakeAction(player)
+                print "hi"
+            else: 
+                action = raw_input("Take Action (Bet, Fold, Check): ")
 
             actionL = action.split(",")
             if actionL[0] == "Raise": 
@@ -192,36 +213,39 @@ class HoldemSimulator:
         for player in winners:
             player.winRound(self.pot/float(len(winners)))
             print "Player ", player, " won ", self.pot/float(len(winners))
+        self.roundOver = True
 
-    def newDeal(self):
-        self.pot = 0
-        self.curRaise = 0
-        self.turn = 0
-        self.dealCards()
-        for i in range(TURNS):
-            self.newRound()
-            self.roundResults()
-            self.turn += 1
+    # def newDeal(self):
+    #     self.pot = 0
+    #     self.curRaise = 0
+    #     self.turn = 0
+    #     self.dealCards()
+    #     for i in range(TURNS):
+    #         self.newRound()
+    #         self.roundResults()
+    #         self.turn += 1
 
-    def dealCards(self):
-        for player in self.players:
-            if player.getChipCount <= 0: continue
-            player.dealCard(self.deck.getRandomCard())
-            player.dealCard(self.deck.getRandomCard())
+    # def dealCards(self):
+    #     for player in self.players:
+    #         if player.getChipCount <= 0: continue
+    #         player.dealCard(self.deck.getRandomCard())
+    #         player.dealCard(self.deck.getRandomCard())
 
-    def newRound(self):
-        for index, player in enumerate(self.players):
-            if player.cards == []: continue # Previous Fold
-            self.takeAction(player)
+    # def newRound(self):
+    #     for index, player in enumerate(self.players):
+    #         if player.cards == []: continue # Previous Fold
+    #         self.takeAction(player)
 
-    def roundResults(self):
-        if self.turn == 0:
-            for i in range(FLOP):
-                self.river.append(self.deck.getRandomCard())
-        elif self.turn <= 2: self.river.append(self.deck.getRandomCard())
-        else: self.decideGame()
-        print " "
-        print "River Cards: ", self.river
+    # def roundResults(self):
+    #     if self.turn == 0:
+    #         for i in range(FLOP):
+    #             self.river.append(self.deck.getRandomCard())
+    #     elif self.turn <= 2: self.river.append(self.deck.getRandomCard())
+    #     else: self.decideGame()
+    #     print " "
+    #     print "River Cards: ", self.river
+
+
 
     # used to test simulator
     def test(self):
@@ -290,7 +314,7 @@ def findDeucesProbWinning(self, player):
 def feature_extractor(self, player):
     state = []
     # probability of winning given hand
-    state.append(int(findDeucesProbWinning(player)))
+    #state.append(int(findDeucesProbWinning(player)))
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
@@ -316,17 +340,54 @@ def feature_extractor(self, player):
 #   Hole cards (2 for each player), verbose - should be false)
 # return is array of [ (prob of tie), (prob of player 1 winning), (prob of player 2 winning), ... etc]
 
+def playTurn(sim, first, second):
+    while True:
+        sim.takeAction(sim.players[first]) 
+        sim.takeAction(sim.players[second])
+        if sim.roundOver or sim.curRaise == 0: break
+
+def playGame(sim):
+    sim.resetGame()
+    first = 0
+    second = 1
+    while True:
+        if sim.gameOver(): break
+        temp = first    # switches who bets first
+        first = second
+        second = first
+        sim.resetRound()
+
+        playTurn(sim, first, second)
+        if sim.roundOver: continue
+
+        sim.river.append(sim.deck.getRandomCard())
+        sim.river.append(sim.deck.getRandomCard())
+        sim.river.append(sim.deck.getRandomCard())
+        playTurn(sim, first, second)
+        if sim.roundOver: continue
+
+        sim.river.append(sim.deck.getRandomCard())
+        playTurn(sim, first, second)
+        if sim.roundOver: continue
+
+        sim.river.append(sim.deck.getRandomCard())
+        playTurn(sim, first, second)
+        if sim.roundOver: continue
+
+        sim.decideGame()
+
 
 def main():
-    game = HoldemSimulator(2,1000,2)
-    game.test()
+    sim = HoldemSimulator(2,1000,0)
+    playGame(sim)
+    # game.test()
     # game.decideGame()
 
-    gameExplanation()
-    game = HoldemSimulator(2, 1000, 1)
-    for i in range(5):
-        game.newDeal()
-        game.deck = Deck() # Reshuffle Deck
+    # gameExplanation()
+    # game = HoldemSimulator(2, 1000, 1)
+    # for i in range(5):
+    #     game.newDeal()
+    #     game.deck = Deck() # Reshuffle Deck
     
 if __name__ == "__main__":
     main()
