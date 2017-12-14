@@ -44,9 +44,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # Here we use the epsilon-greedy algorithm: with probability
     # |explorationProb|, take a random action.
     def getAction(self, state):
-        # stateArray = []
-        # for key in state:
-        #     stateArray.append(float(state[key]))
         a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:state})
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
