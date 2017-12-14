@@ -48,8 +48,9 @@ class QLearningAlgorithm(util.RLAlgorithm):
         if newState == None: return
         vhat = max([self.getQ(newState, a) for a in self.actions])
         Qopt = self.getQ(state, action)
+        sumWeights = float(sum(self.weights.values()))+1
         for k,v in self.featureExtractor(self.sim, state):
-            self.weights[k] = self.weights.get(k,0) - self.getStepSize()*(Qopt-(reward + self.discount*vhat))
+            self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
 
 
         # if newState != None:

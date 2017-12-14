@@ -156,9 +156,6 @@ class HoldemSimulator:
                 action = self.computerTakeAction(player)
             else: 
                 action = "Check"
-                # if player.getChipCount() >= self.curRaise + 250:
-                #     action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
-                # else: action = random.choice(["Fold", "Check"])
 
             actionL = action.split(",")
             if actionL[0] == "Raise": 
