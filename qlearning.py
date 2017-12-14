@@ -1,4 +1,5 @@
 import util, random, math, sys
+import numpy as np
 from collections import defaultdict
 import tensorflow as tf
 
@@ -24,13 +25,14 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.predict = tf.argmax(self.Qout,1)
 
         #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
-        nextQ = tf.placeholder(shape=[1,3],dtype=tf.float32)
-        loss = tf.reduce_sum(tf.square(nextQ - self.Qout))
+        self.nextQ = tf.placeholder(shape=[1,3],dtype=tf.float32)
+        loss = tf.reduce_sum(tf.square(self.nextQ - self.Qout))
         trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
-        updateModel = trainer.minimize(loss)
+        self.updateModel = trainer.minimize(loss)
         init = tf.initialize_all_variables()
         self.sess = tf.Session()
         self.sess.run(init)
+        self.allQ = None
 
 
     # Return the Q function associated with the weights and features
@@ -45,8 +47,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # |explorationProb|, take a random action.
     def getAction(self, state):
 
-
-        a, allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:state})
+        a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:state})
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
@@ -68,12 +69,25 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # self.getQ() to compute the current estimate of the parameters.
     def incorporateFeedback(self, state, action, reward, newState):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
-        if newState == None: return
-        vhat = max([self.getQ(newState, a) for a in self.actions])
-        Qopt = self.getQ(state, action)
-        sumWeights = float(sum(self.weights.values()))+1
-        for k,v in self.featureExtractor(self.sim, state):
-            self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
+        #Obtain the Q' values by feeding the new state through our network
+        Q1 = self.sess.run(self.Qout,feed_dict={self.inputs1:newState})
+        #Obtain maxQ' and set our target value for chosen action.
+        maxQ1 = np.max(Q1)
+        targetQ = self.allQ
+        targetQ[0,action] = reward + self.getStepSize()*maxQ1
+        # targetQ[0,a[0]] = reward + y*maxQ1
+        #Train our network using target and predicted Q values
+        _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:state, self.nextQ:targetQ})
+        #_,W1 = sess.run([updateModel,W],feed_dict={inputs1:np.identity(16)[s:s+1],nextQ:targetQ})
+
+
+
+        # if newState == None: return
+        # vhat = max([self.getQ(newState, a) for a in self.actions])
+        # Qopt = self.getQ(state, action)
+        # sumWeights = float(sum(self.weights.values()))+1
+        # for k,v in self.featureExtractor(self.sim, state):
+        #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
 
 
         # if newState != None:
