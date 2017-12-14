@@ -19,7 +19,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.numIters = 1
         self.sim = simulator
         # These lines establish the feed-forward part of the network used to choose actions
-        self.inputs1 = tf.placeholder(shape=[1,6],dtype=tf.float32)
+        self.inputs1 = tf.placeholder(shape=[1,6],dtype=tf.int16)
         self.W = tf.Variable(tf.random_uniform([6,3],0,0.01))
         self.Qout = tf.matmul(self.inputs1, self.W)
         self.predict = tf.argmax(self.Qout,1)
