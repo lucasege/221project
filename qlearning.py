@@ -24,7 +24,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.predict = tf.argmax(self.Qout,1)
 
         #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
-        nextQ = tf.placeholder(shape=[1,4],dtype=tf.float32)
+        nextQ = tf.placeholder(shape=[1,3],dtype=tf.float32)
         loss = tf.reduce_sum(tf.square(nextQ - self.Qout))
         trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
         updateModel = trainer.minimize(loss)
