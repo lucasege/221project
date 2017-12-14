@@ -1,5 +1,6 @@
 import util, random, math, sys
 from collections import defaultdict
+import tensorflow as tf
 
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
 # actions: a function that takes a state and returns a list of actions.
@@ -14,7 +15,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
         self.weights = defaultdict(float)
-        self.numIters = 0
+        self.numIters = 1
         self.sim = simulator
 
     # Return the Q function associated with the weights and features

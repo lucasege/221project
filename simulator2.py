@@ -56,6 +56,7 @@ class HoldemSimulator:
         self.roundOver = False
         for player in self.players:
             player.takeCards()
+            # player.resRaise()
             if player.getChipCount() < 250:
                 self.pot += player.getChipCount()
                 player.bet(player.getChipCount())
@@ -71,7 +72,6 @@ class HoldemSimulator:
         i = 0
         self.players.append(Player(self.startAmount,0,True))
         self.players.append(Player(self.startAmount,1,False))
-        self.resetRound()
 
     def straight(self, hand):
         total = hand + self.river
@@ -140,8 +140,8 @@ class HoldemSimulator:
 
     def computerTakeAction(self, player):
         nextAction = self.qlearn.getAction(player)
-        if self.curRaise + 250 > player.chips and nextAction == "Raise": #ISAAC CHECK LOGIC
-            nextAction = "Check" #random.choice(["Check", "Fold"]) #changed to check Lucas Look
+        if self.curRaise + 250 > player.chips and nextAction == "Raise": 
+            nextAction = "Check"
         if not self.firstRound and player.prevState is not None: # incorporate feedback
             self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player)
         else:
@@ -152,13 +152,13 @@ class HoldemSimulator:
         
     def takeAction(self, player):
         while True:
-            #print "Player ", player.getindex(), " cards are ", player.peakCards()
             if player.isComputer:
                 action = self.computerTakeAction(player)
             else: 
-                if player.getChipCount() >= self.curRaise + 250:
-                    action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
-                else: action = random.choice(["Fold", "Check"])
+                action = "Check"
+                # if player.getChipCount() >= self.curRaise + 250:
+                #     action = random.choice(["Raise", "Fold", "Check"]) # raw_input("Take Action (Bet, Fold, Check): ")
+                # else: action = random.choice(["Fold", "Check"])
 
             actionL = action.split(",")
             if actionL[0] == "Raise": 
@@ -193,7 +193,7 @@ class HoldemSimulator:
             player.prevState = None
 
     #sf:8, 4k:7, fh:6, f:5, s:4, 3k:3, 22k:2, 2k:1, h:0
-    def decideGame(self):
+    def decideRound(self):
         totals = []
         best = None
         for i, player in enumerate(self.players): 
@@ -253,7 +253,6 @@ class HoldemSimulator:
 
         for player in winners:
             player.winRound(self.pot/float(len(winners)))
-            print "Player ", player, " won ", self.pot/float(len(winners))
             if player.prevState is not None:
                 self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
         for player in self.players:
@@ -385,12 +384,13 @@ def playGame(sim):
         playTurn(sim, first, second)
         if sim.roundOver: continue
 
-        sim.decideGame()
+        sim.decideRound()
 
 
 def main():
     sim = HoldemSimulator(2,2000,1)
     for i in range(1000):
+        print sim.qlearn.weights
         playGame(sim)
         print sim.players
         sys.stdout.flush()
@@ -398,15 +398,6 @@ def main():
     sim.qlearn.printWeights()
     print sim.wins, sim.games
     print sim.folds, sim.actions
-    #sim.resetGame()
-    # game.test()
-    # game.decideGame()
-
-    # gameExplanation()
-    # game = HoldemSimulator(2, 1000, 1)
-    # for i in range(5):
-    #     game.newDeal()
-    #     game.deck = Deck() # Reshuffle Deck
 
     
 if __name__ == "__main__":
