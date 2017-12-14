@@ -320,9 +320,9 @@ def findDeucesProbWinning(sim, player):
 
 #prob winning, playerRank, opponentraises, pre-flop rating, bet/holdings, turn
 def feature_extractor(sim, player):
-    state = np.empty(5)
+    state = np.empty([5,1])
     # probability of winning given hand
-    state[0] = int(findDeucesProbWinning(sim, player))
+    state[0] = (findDeucesProbWinning(sim, player))
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
@@ -340,7 +340,7 @@ def feature_extractor(sim, player):
         if ratio > 1: ratio = 1
     else: ratio = 1
     state[4] = int(100*ratio)
-    return state
+    return state.astype(np.float32)
 
 ## Use github prob like this:
 # parallel_holdem_calc.calculate(None, True, 1, None, ["8s", "7s", "Ad", "Ac"], False)

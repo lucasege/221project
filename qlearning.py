@@ -19,9 +19,9 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.numIters = 1
         self.sim = simulator
         # These lines establish the feed-forward part of the network used to choose actions
-        self.inputs1 = tf.placeholder(shape=[1,6],dtype=tf.float32)
-        self.W = tf.Variable(tf.random_uniform([6,3],0,0.01))
-        self.Qout = tf.matmul(self.inputs1, self.W)
+        self.inputs1 = tf.placeholder(shape=[5,1],dtype=tf.float32)
+        self.W = tf.Variable(tf.random_uniform([5,3],0,0.01))
+        self.Qout = tf.matmul(tf.transpose(self.W),self.inputs1)
         self.predict = tf.argmax(self.Qout,1)
 
         # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
@@ -44,7 +44,12 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # Here we use the epsilon-greedy algorithm: with probability
     # |explorationProb|, take a random action.
     def getAction(self, state):
-        a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:state})
+        # print self
+        # print state
+        features = self.featureExtractor(self.sim, state)
+        a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:features})
+        print a
+        return "Check"
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
@@ -66,26 +71,29 @@ class QLearningAlgorithm(util.RLAlgorithm):
     # self.getQ() to compute the current estimate of the parameters.
     def incorporateFeedback(self, state, action, reward, newState):
         #Obtain the Q' values by feeding the new state through our network
-        Q1 = self.sess.run(self.Qout,feed_dict={self.inputs1:newState})
+        nFeatures = self.featureExtractor(self.sim, newState)
+        Q1 = self.sess.run(self.Qout,feed_dict={self.inputs1:nFeatures})
         #Obtain maxQ' and set our target value for chosen action.
         maxQ1 = np.max(Q1)
         targetQ = self.allQ
+        print targetQ
         targetQ[0,action] = reward + self.getStepSize()*maxQ1
         # targetQ[0,a[0]] = reward + y*maxQ1
         #Train our network using target and predicted Q values
-        _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:state, self.nextQ:targetQ})
+        features = self.featureExtractor(self.sim, state)
+        _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:targetQ})
         #_,W1 = sess.run([updateModel,W],feed_dict={inputs1:np.identity(16)[s:s+1],nextQ:targetQ})
 
 
 
-        # if newState == None: return
-        # vhat = max([self.getQ(newState, a) for a in self.actions])
-        # Qopt = self.getQ(state, action)
-        # # sumWeights = float(np.sum(self.weights))+1
-        # features = self.featureExtractor(self.sim, state)
-        # self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
-        # # for k,v in self.featureExtractor(self.sim, state):
-        # #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
+        if newState == None: return
+        vhat = max([self.getQ(newState, a) for a in self.actions])
+        Qopt = self.getQ(state, action)
+        # sumWeights = float(np.sum(self.weights))+1
+        features = self.featureExtractor(self.sim, state)
+        self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
+        # for k,v in self.featureExtractor(self.sim, state):
+        #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
 
     def printWeights(self):
         print(self.weights)
