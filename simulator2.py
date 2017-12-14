@@ -6,6 +6,7 @@ import parallel_holdem_calc
 import holdem_calc
 import qlearning
 from deuces import Card, Evaluator
+import numpy as np
 import sys
 
 FLOP = 3
@@ -319,26 +320,26 @@ def findDeucesProbWinning(sim, player):
 
 #prob winning, playerRank, opponentraises, pre-flop rating, bet/holdings, turn
 def feature_extractor(sim, player):
-    state = []
+    state = np.empty(5)
     # probability of winning given hand
-    state.append(('deuceprob', (int(findDeucesProbWinning(sim, player)))))
+    state[0] = int(findDeucesProbWinning(sim, player))
     # player rank
     opponent = 1
     if player.getindex() == 1: opponent = 0
-    if sim.players[opponent].getChipCount > player.getChipCount: state.append(('winning', 0))
-    else: state.append(('winning', 1))
+    if sim.players[opponent].getChipCount > player.getChipCount: state[1] = 0
+    else: state[1] = 1
     # opponent raises 
-    state.append(('oppraises', sim.players[opponent].getNumRaises()))
+    state[2] = sim.players[opponent].getNumRaises()
     # preflop rating
     #state.append(preFlopRate(player))
     # turn number
-    state.append(('turnNum', (len(sim.river))))
+    state[3] = len(sim.river)
     # curRaise/holdings 
     if player.getChipCount() != 0:
         ratio = sim.curRaise/float(player.getChipCount())
         if ratio > 1: ratio = 1
     else: ratio = 1
-    state.append(('ratio', int(100*ratio)))
+    state[4] = int(100*ratio)
     return state
 
 ## Use github prob like this:
