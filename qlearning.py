@@ -48,12 +48,11 @@ class QLearningAlgorithm(util.RLAlgorithm):
         # print state
         features = self.featureExtractor(self.sim, state)
         a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:features})
-        print a
-        return "Check"
+        # print a
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
-            return a
+            return self.actions[a[0]]
 
         # self.numIters += 1
         # if random.random() < self.explorationProb:
@@ -76,22 +75,22 @@ class QLearningAlgorithm(util.RLAlgorithm):
         #Obtain maxQ' and set our target value for chosen action.
         maxQ1 = np.max(Q1)
         targetQ = self.allQ
-        print targetQ
-        targetQ[0,action] = reward + self.getStepSize()*maxQ1
+        # print "fuck", targetQ[0,action]
+        targetQ[0] = reward + self.discount*maxQ1
         # targetQ[0,a[0]] = reward + y*maxQ1
         #Train our network using target and predicted Q values
         features = self.featureExtractor(self.sim, state)
-        _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:targetQ})
-        #_,W1 = sess.run([updateModel,W],feed_dict={inputs1:np.identity(16)[s:s+1],nextQ:targetQ})
+        _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:(targetQ.T)})
+        #tf.Print(self.W, [self.W])
 
 
 
-        if newState == None: return
-        vhat = max([self.getQ(newState, a) for a in self.actions])
-        Qopt = self.getQ(state, action)
-        # sumWeights = float(np.sum(self.weights))+1
-        features = self.featureExtractor(self.sim, state)
-        self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
+        # if newState == None: return
+        # vhat = max([self.getQ(newState, a) for a in self.actions])
+        # Qopt = self.getQ(state, action)
+        # # sumWeights = float(np.sum(self.weights))+1
+        # features = self.featureExtractor(self.sim, state)
+        # self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
         # for k,v in self.featureExtractor(self.sim, state):
         #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
 

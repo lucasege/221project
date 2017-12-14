@@ -388,7 +388,6 @@ def playGame(sim):
 def main():
     sim = HoldemSimulator(2,2000,1)
     for i in range(1000):
-        print sim.qlearn.weights
         playGame(sim)
         print sim.players
         sys.stdout.flush()
