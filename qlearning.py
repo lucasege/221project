@@ -34,7 +34,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.saver = tf.train.Saver()
         self.sess = tf.Session()
         self.sess.run(init)
-        self.saver.restore(self.sess, "/tmp/poker_model.ckpt")
+        # self.saver.restore(self.sess, "/tmp/poker_model.ckpt")
         self.allQ = None
 
 
@@ -86,7 +86,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         features = self.featureExtractor(self.sim, state)
         _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:targetQ})
         #_,W1 = sess.run([updateModel,W],feed_dict={inputs1:np.identity(16)[s:s+1],nextQ:targetQ})
-        self.saver.save(self.sess, "/tmp/poker_model.ckpt")
+        
 
 
         if newState == None: return
@@ -97,6 +97,9 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
         # for k,v in self.featureExtractor(self.sim, state):
         #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
+
+    def saveWeight(self):
+        self.saver.save(self.sess, "/tmp/poker_model.ckpt")
 
     def printWeights(self):
         print(self.weights)

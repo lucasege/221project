@@ -395,6 +395,7 @@ def main():
     sim.qlearn.printWeights()
     print sim.wins, sim.games
     print sim.folds, sim.actions
+    sim.qlearn.saveWeight()
 
     
 if __name__ == "__main__":
