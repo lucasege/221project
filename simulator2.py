@@ -33,7 +33,7 @@ class HoldemSimulator:
         self.roundOver = False
         self.firstRound = True
         self.winner = None
-        self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.2)
+        self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.3)
 
         self.players.append(Player(startAmount,0,True))
         self.players.append(Player(startAmount,1,False))
@@ -49,7 +49,7 @@ class HoldemSimulator:
             cHand = [sTotal[i]]
             current = sTotal[i]
             count = 0
-            while True:# j in range(1,5):
+            while True:
                 count += 1
                 if i + count < len(sTotal): break
                 if sTotal[i+count][0] < current[0]+1: 
@@ -128,17 +128,20 @@ class HoldemSimulator:
             if self.winner == 0:
                 # print "0"
                 if self.players[0].prevState != None:
-                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, self.pot, self.players[0])
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, 
+                        self.players[0].prevAction, self.pot, self.players[0])
                 self.players[0].winRound(self.pot)
             elif self.winner == 1:
                 # print "1"
                 if self.players[0].prevState != None:
-                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, -self.pot, self.players[0])
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, 
+                        self.players[0].prevAction, -self.pot, self.players[0])
                 self.players[1].winRound(self.pot)
             else:
                 # print ".5"
                 if self.players[0].prevState != None:
-                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, self.pot/2, self.players[0])
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, 
+                        self.players[0].prevAction, self.pot/2, self.players[0])
                 self.players[1].winRound(self.pot/float(2))
                 self.players[0].winRound(self.pot/float(2))
             self.firstRound = True
@@ -298,6 +301,7 @@ def convertToDeuces(cards):
     return newCards
 
 def findDeucesProbWinning(sim, player):
+    print sim.river, player.cards
     board = None
     if len(sim.river) != 0:
         board = convertToDeuces(sim.river)
@@ -383,7 +387,7 @@ def playGame(sim):
 
 def main():
     sim = HoldemSimulator(2,2000,1)
-    for i in range(1000):
+    for i in range(10000):
         playGame(sim)
         print sim.players
         sys.stdout.flush()

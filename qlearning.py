@@ -10,7 +10,7 @@ import tensorflow as tf
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(util.RLAlgorithm):
-    def __init__(self, actions, discount, featureExtractor, simulator, explorationProb=0.2):
+    def __init__(self, actions, discount, featureExtractor, simulator, explorationProb=0.3):
         self.actions = actions
         self.discount = discount
         self.featureExtractor = featureExtractor
@@ -26,10 +26,15 @@ class QLearningAlgorithm(util.RLAlgorithm):
 
         # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
         self.nextQ = tf.placeholder(shape=[1,3],dtype=tf.float32)
-        self.lamb = .001
-        loss = tf.reduce_mean(tf.square(self.nextQ - self.Qout))+self.lamb*tf.square(tf.norm(self.W))
-        trainer = tf.train.GradientDescentOptimizer(learning_rate=0.000000001)
-        self.updateModel = trainer.minimize(loss)
+        lamb = 1
+        loss = tf.reduce_mean(tf.square(self.nextQ - self.Qout))+lamb*tf.square(tf.norm(self.W))
+
+        global_step = tf.Variable(0, trainable=False)
+        starter_learning_rate = 0.0001
+        learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,1, .5, staircase=True)
+        trainer = tf.train.GradientDescentOptimizer(learning_rate)
+        self.updateModel = trainer.minimize(loss, global_step = global_step)
+
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
@@ -48,6 +53,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
         # print self
         # print state
         self.numIters += 1
+        if self.numIters %100 == 0: self.explorationProb = self.explorationProb*.98
         features = self.featureExtractor(self.sim, state)
         a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:features})
         if random.random() < self.explorationProb:
@@ -80,7 +86,8 @@ class QLearningAlgorithm(util.RLAlgorithm):
         #Train our network using target and predicted Q values
         features = self.featureExtractor(self.sim, state)
         _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:(targetQ.T)})
-        print("W", self.sess.run([self.W]))
+        # print("W", self.sess.run([self.W]))
+        # print self.explorationProb
 
         # if newState == None: return
         # vhat = max([self.getQ(newState, a) for a in self.actions])
