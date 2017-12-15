@@ -8,6 +8,7 @@ import qlearning
 from deuces import Card, Evaluator
 import numpy as np
 import sys
+import copy
 
 FLOP = 3
 TURN = 1
@@ -31,48 +32,11 @@ class HoldemSimulator:
         self.curRaise = 0
         self.roundOver = False
         self.firstRound = True
+        self.winner = None
         self.qlearn = qlearning.QLearningAlgorithm(["Raise", "Fold", "Check"], 0.9, feature_extractor, self, 0.2)
 
         self.players.append(Player(startAmount,0,True))
         self.players.append(Player(startAmount,1,False))
-
-
-    def gameOver(self):
-        for player in self.players:
-            if player.getChipCount() == 0: 
-                # file = open("weights.txt","w")
-                # for key, val in self.qlearn.weights:
-                #     print key
-                #     file.write(key,val)
-                # file.close()
-                if not player.isComputer: self.wins += 1
-                return True
-        return False
-
-    def resetRound(self):
-        self.deck = Deck()
-        self.river = []
-        self.pot = 0
-        self.curRaise = 0
-        self.roundOver = False
-        for player in self.players:
-            player.takeCards()
-            # player.resRaise()
-            if player.getChipCount() < 250:
-                self.pot += player.getChipCount()
-                player.bet(player.getChipCount())
-            else: 
-                player.bet(250)
-                self.pot += 250
-            player.dealCard(self.deck.getRandomCard())
-            player.dealCard(self.deck.getRandomCard())
-
-    def resetGame(self):
-        self.games += 1
-        self.players = []
-        i = 0
-        self.players.append(Player(self.startAmount,0,True))
-        self.players.append(Player(self.startAmount,1,False))
 
     def straight(self, hand):
         total = hand + self.river
@@ -147,9 +111,67 @@ class HoldemSimulator:
             self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player)
         else:
             self.firstRound = False
-        player.prevState = player
+        player.prevState = copy.deepcopy(player)
         player.prevAction = nextAction
         return nextAction
+
+    def gameOver(self):
+        if self.pot > 250 : return False
+        for player in self.players:
+            if player.getChipCount() <= 0: 
+                if not player.isComputer: self.wins += 1
+                return True
+        return False
+
+    def resetRound(self):
+        if self.roundOver:
+            if self.winner == 0:
+                # print "0"
+                if self.players[0].prevState != None:
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, self.pot, self.players[0])
+                self.players[0].winRound(self.pot)
+            elif self.winner == 1:
+                # print "1"
+                if self.players[0].prevState != None:
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, -self.pot, self.players[0])
+                self.players[1].winRound(self.pot)
+            else:
+                # print ".5"
+                if self.players[0].prevState != None:
+                    self.qlearn.incorporateFeedback(self.players[0].prevState, self.players[0].prevAction, self.pot/2, self.players[0])
+                self.players[1].winRound(self.pot/float(2))
+                self.players[0].winRound(self.pot/float(2))
+            self.firstRound = True
+            self.players[0].prevAction = None
+            self.players[0].prevState = None
+
+        self.winner = None
+        self.deck = Deck()
+        self.river = []
+        self.pot = 0
+        self.curRaise = 0
+        self.roundOver = False
+
+        for player in self.players:
+            if player.chips == 0: return 
+
+        for player in self.players:
+            player.takeCards()
+            # player.resRaise()
+            if player.getChipCount() < 250:
+                self.pot += player.getChipCount()
+                player.bet(player.getChipCount())
+            else: 
+                player.bet(250)
+                self.pot += 250
+            player.dealCard(self.deck.getRandomCard())
+            player.dealCard(self.deck.getRandomCard())
+
+    def resetGame(self):
+        self.games += 1
+        self.players = []
+        self.players.append(Player(self.startAmount,0,True))
+        self.players.append(Player(self.startAmount,1,False))
         
     def takeAction(self, player):
         while True:
@@ -157,7 +179,7 @@ class HoldemSimulator:
                 action = self.computerTakeAction(player)
             else: 
                 action = "Check"
-
+            # print player.getindex(), action
             actionL = action.split(",")
             if actionL[0] == "Raise": 
                 if self.curRaise + 250 <= player.getChipCount():
@@ -167,9 +189,10 @@ class HoldemSimulator:
                     player.incRaise()
                     break
             if actionL[0] == "Fold": 
-                winner = 0
-                if player.getindex() == 0: winner = 1
-                self.players[winner].winRound(self.pot)
+                self.winner = 1
+                if player.getindex() == 1: 
+                    self.winner = 0
+                # self.players[winner].winRound(self.pot)
                 self.roundOver = True
                 break
             if actionL[0] == "Check":
@@ -181,14 +204,7 @@ class HoldemSimulator:
                 break
                 
             print action, "Invalid Action, please try again"
-        if self.roundOver and not self.firstRound and player.isComputer and player.prevState is not None:
-            if actionL[0] != "Fold":
-                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
-            else:
-                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, 0, player) #-self.pot, player)
-            self.firstRound = True
-            player.prevAction = None
-            player.prevState = None
+       
 
     #sf:8, 4k:7, fh:6, f:5, s:4, 3k:3, 22k:2, 2k:1, h:0
     def decideRound(self):
@@ -249,35 +265,10 @@ class HoldemSimulator:
                 elif (pHand[1] == bHand[1] and len(pHand) ==2) or (len(pHand) == 3 and pHand[1] == bHand[1] and pHand[2] == bHand[2]):
                     winners.append(self.players[i])
 
-        for player in winners:
-            player.winRound(self.pot/float(len(winners)))
-            if player.prevState is not None:
-                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, self.pot, player)
-        for player in self.players:
-           if player not in winners and player.isComputer and player.prevState is not None:
-                self.qlearn.incorporateFeedback(player.prevState, player.prevAction, -self.pot, player)
+        if len(winners) != 1: self.winner = .5
+        else: self.winner = winners[0].getindex()
         self.roundOver = True
-        self.firstRound = True
-        for player in self.players:
-            player.prevAction = None
-            player.prevState = None
 
-
-    # used to test simulator
-    def test(self):
-        self.players[0].dealCard((1,1))
-        self.players[0].dealCard((3,3))
-        self.players[1].dealCard((2,2))
-        self.players[1].dealCard((3,7))
-
-        self.river.append((0,3))
-        self.river.append((0,1))
-        self.river.append((1,2))
-        self.river.append((0,9))
-        self.river.append((1,9))
-
-def gameExplanation():
-    print "EXPLAIN RULES OF GAME, (SUITE: 0 = SPADES, 1 = HEARTS, 2 = CLUBS, 3 = DIAMONDS, CARD) ETC...."
 
 CARD_SUITES = {0: 's', 1: 'h', 2: 'c', 3: 'd'}
 CARD_VALUES = {1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9:'9', 10: 'T', 11:'J', 12:'Q', 13: 'K'}
@@ -359,27 +350,32 @@ def playGame(sim):
     first = 0
     second = 1
     while True:
-        if sim.gameOver(): break
         temp = int(first)    # switches who bets first
         first = int(second)
         second = int(temp)
+        if sim.gameOver(): break
         sim.resetRound()
+        # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
 
         playTurn(sim, first, second)
+        # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
         if sim.roundOver: continue
 
         sim.river.append(sim.deck.getRandomCard())
         sim.river.append(sim.deck.getRandomCard())
         sim.river.append(sim.deck.getRandomCard())
         playTurn(sim, first, second)
+        # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
         if sim.roundOver: continue
 
         sim.river.append(sim.deck.getRandomCard())
         playTurn(sim, first, second)
+        # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
         if sim.roundOver: continue
 
         sim.river.append(sim.deck.getRandomCard())
         playTurn(sim, first, second)
+        # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
         if sim.roundOver: continue
 
         sim.decideRound()

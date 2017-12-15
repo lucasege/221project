@@ -22,12 +22,13 @@ class QLearningAlgorithm(util.RLAlgorithm):
         self.inputs1 = tf.placeholder(shape=[5,1],dtype=tf.float32)
         self.W = tf.Variable(tf.random_uniform([5,3],0,0.01))
         self.Qout = tf.matmul(tf.transpose(self.W),self.inputs1)
-        self.predict = tf.argmax(self.Qout,1)
+        self.predict = tf.argmax(self.Qout)
 
         # Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
         self.nextQ = tf.placeholder(shape=[1,3],dtype=tf.float32)
-        loss = tf.reduce_sum(tf.square(self.nextQ - self.Qout))
-        trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+        self.lamb = .001
+        loss = tf.reduce_mean(tf.square(self.nextQ - self.Qout))+self.lamb*tf.square(tf.norm(self.W))
+        trainer = tf.train.GradientDescentOptimizer(learning_rate=0.000000001)
         self.updateModel = trainer.minimize(loss)
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
@@ -46,9 +47,9 @@ class QLearningAlgorithm(util.RLAlgorithm):
     def getAction(self, state):
         # print self
         # print state
+        self.numIters += 1
         features = self.featureExtractor(self.sim, state)
         a, self.allQ = self.sess.run([self.predict, self.Qout], feed_dict={self.inputs1:features})
-        # print a
         if random.random() < self.explorationProb:
             return random.choice(self.actions)
         else:
@@ -62,7 +63,7 @@ class QLearningAlgorithm(util.RLAlgorithm):
 
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
-        return 1.0 / math.sqrt(self.numIters)
+        return 1 / math.sqrt(self.numIters)
 
     # We will call this function with (s, a, r, s'), which you should use to update |weights|.
     # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
@@ -75,15 +76,11 @@ class QLearningAlgorithm(util.RLAlgorithm):
         #Obtain maxQ' and set our target value for chosen action.
         maxQ1 = np.max(Q1)
         targetQ = self.allQ
-        # print "fuck", targetQ[0,action]
         targetQ[0] = reward + self.discount*maxQ1
-        # targetQ[0,a[0]] = reward + y*maxQ1
         #Train our network using target and predicted Q values
         features = self.featureExtractor(self.sim, state)
         _,W1 = self.sess.run([self.updateModel, self.W], feed_dict={self.inputs1:features, self.nextQ:(targetQ.T)})
-        #tf.Print(self.W, [self.W])
-
-
+        print("W", self.sess.run([self.W]))
 
         # if newState == None: return
         # vhat = max([self.getQ(newState, a) for a in self.actions])
@@ -91,8 +88,6 @@ class QLearningAlgorithm(util.RLAlgorithm):
         # # sumWeights = float(np.sum(self.weights))+1
         # features = self.featureExtractor(self.sim, state)
         # self.weights = self.weights - self.getStepSize()*features*(Qopt-(reward + self.discount*vhat))
-        # for k,v in self.featureExtractor(self.sim, state):
-        #     self.weights[k] = self.weights.get(k,0) - self.getStepSize()*v*(self.weights[k]+1)/sumWeights*(Qopt-(reward + self.discount*vhat))
 
     def printWeights(self):
         print(self.weights)
