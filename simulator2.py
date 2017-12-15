@@ -135,7 +135,7 @@ class HoldemSimulator:
                 # print "1"
                 if self.players[0].prevState != None:
                     self.qlearn.incorporateFeedback(self.players[0].prevState, 
-                        self.players[0].prevAction, -self.pot, self.players[0])
+                        self.players[0].prevAction, 0, self.players[0])
                 self.players[1].winRound(self.pot)
             else:
                 # print ".5"
@@ -156,7 +156,10 @@ class HoldemSimulator:
         self.roundOver = False
 
         for player in self.players:
-            if player.chips == 0: return 
+            if player.chips == 0: 
+                for player2 in self.players:
+                    player2.takeCards()
+                return 
 
         for player in self.players:
             player.takeCards()
@@ -301,7 +304,7 @@ def convertToDeuces(cards):
     return newCards
 
 def findDeucesProbWinning(sim, player):
-    print sim.river, player.cards
+    # print sim.river, player.cards, sim.roundOver, sim.winner
     board = None
     if len(sim.river) != 0:
         board = convertToDeuces(sim.river)
@@ -357,8 +360,8 @@ def playGame(sim):
         temp = int(first)    # switches who bets first
         first = int(second)
         second = int(temp)
-        if sim.gameOver(): break
         sim.resetRound()
+        if sim.gameOver(): break
         # print sim.pot, "0:",sim.players[0].chips, "1:", sim.players[1].chips
 
         playTurn(sim, first, second)
@@ -389,7 +392,7 @@ def main():
     sim = HoldemSimulator(2,2000,1)
     for i in range(10000):
         playGame(sim)
-        print sim.players
+        print sim.wins, sim.games
         sys.stdout.flush()
         sim.resetGame()
     sim.qlearn.printWeights()
